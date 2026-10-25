@@ -7,6 +7,7 @@
 ## 步骤
 
 1. 定日期：`D=$(date -v+1d +%Y-%m-%d)`。**如果 `packs/$D.json` 已经存在（这一天已经做好发布过，或是用 tools/enrich 手工写的），什么都不要改**，在 daily.log 记「$D 已有，跳过」就结束。否则，如果 `packs/base/$D.json` 已经存在且 `node tools/check.js packs/base/$D.json` 通过，直接跳到第 4 步（只补配音和发布）。
+1.5 先同步公开仓库：`node tools/public.js pull`。它会把别人（比如 ChatGPT）在 GitHub 仓库 GabrielTeufelchen/n2-dojo 里改过的 index.html / songs / packs 拿回本地（教材放进 packs/override/），输出里会列出来；有的话在 daily.log 记一笔。
 2. 看上下文：`node tools/context.js $D`。里面有周主题、当天轮换的题型（rotation）、最近用过的单词（不能重复）、用过的文化题目、上一集大人の会話的最后几句。再打开前一天的 `packs/<日期>.json` 看一眼风格和难度。
 3. 写 `packs/base/$D.json`（完整一套，不另写 enrich 文件）。结构和现有的 `packs/2026-10-24.json` 完全一样，按下面的“内容要求”。写完跑 `node tools/check.js packs/base/$D.json`，有问题就改到通过。
 4. 跑 `bash tools/daily.sh $D`：检查 → 合并 → 配音（引擎没开会自己开、用完关掉）→ 生成 `audio/publish.json`。
@@ -14,6 +15,7 @@
 5. 发布：
    - 先 `Artifact action=read url=https://claude.ai/artifact/EKQaCRWDmbdHj3n8uuTWLA`（定时任务是新会话，不读一次发布会被拒）。如果线上的 index.html 和本地 `index.html` 不一样，以本地为准、但要在日志里记一笔。
    - 再 `Artifact publish`：`url` 同上，`file_path` = 本地 `index.html`，`files` = `audio/publish.json` 的内容（里面的 null 表示删除旧文件），`label` = "每日教材 $D"。不要传 capabilities、icon。
+5.5 推送公开网页：`node tools/public.js push "每日教材 $D"`（推到 https://gabrielteufelchen.github.io/n2-dojo/ ）。失败就记进 daily.log，不影响 artifact。
 6. 在 `tools/daily.log` 末尾追加一行：日期、是否成功、题型轮换、有没有手动修过读音、发布的版本号。
 
 失败时（引擎起不来、发布被拒等）：不要硬来，把原因写进 daily.log，`packs/base/$D.json` 留着，下次运行会从第 4 步接着做。
