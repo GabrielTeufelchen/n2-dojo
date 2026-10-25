@@ -808,12 +808,12 @@ function songPlayer(cur){
   if(cur.media){
     const m=cur.media;
     box.append(el('p',{class:'small muted'},esc(m.label)));
-    const buttons=el('div',{class:'row'}), slot=el('div');
-    const embed=el('button',{class:'btn pri small'},'打开官方播放器');
-    embed.onclick=()=>{stopSongAudio();slot.replaceChildren(el('iframe',{src:`https://www.youtube-nocookie.com/embed/${m.youtube}`,title:m.label,allow:'encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'width:100%;aspect-ratio:16/9;border:0;border-radius:12px;margin-top:12px'}));embed.disabled=true;};
-    buttons.append(embed,el('a',{class:'btn small',href:`https://www.youtube.com/watch?v=${m.youtube}`,target:'_blank',rel:'noopener'},'在 YouTube 打开 ↗'));
-    if(m.source)buttons.append(el('a',{class:'btn small',href:m.source,target:'_blank',rel:'noopener'},'SMAP 原版唱片信息 ↗'));
-    box.append(buttons,slot,el('p',{class:'small muted'},'播放依赖 YouTube 和所在地区的可用性；无法播放时可打开官方页面，或使用下面的本地音频。'));
+    const slot=el('div',{'data-song-embed':''});
+    const embed=el('button',{class:'btn small'},'重新加载页内播放器');
+    const loadPlayer=()=>{stopSongAudio();slot.replaceChildren(el('iframe',{src:`https://www.youtube-nocookie.com/embed/${m.youtube}?playsinline=1`,title:m.label,allow:'encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:12px'}));};
+    embed.onclick=loadPlayer;
+    box.append(slot,el('p',{class:'small muted'},'直接点击上方播放器里的播放键，就在本页听歌。播放器需要能连接 YouTube；若加载失败可在本页重试，或使用下方的本地音频。'),embed);
+    loadPlayer();
   }
   const local=el('details',{class:'song-local'});local.append(el('summary',{},'导入自己的原唱文件 · A–B 复读'));
   local.append(el('p',{class:'small muted'},'文件只在当前浏览器内播放，不上传。刷新后需重新选择文件。A、B 由你按实际版本手动标记，不自动对应歌词。'));
