@@ -195,6 +195,32 @@ mark.blank{background:var(--mark);color:var(--mark-ink);border-radius:4px;paddin
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:8px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .wrongs{display:grid;gap:10px}
 .wr{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:12px 14px;display:grid;gap:6px}
+/* 学习路线沿用原有的纸张、墨蓝和明朝体。 */
+.study-plan{display:grid;gap:14px;border-top:3px solid var(--ai);margin-bottom:24px}
+.plan-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.plan-top h2{font-size:20px}
+.plan-top .row{gap:8px}.plan-details{display:grid;gap:14px}
+.plan-score{font-family:var(--f-mono);color:var(--ai);font-size:14px}
+.plan-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.plan-step{display:grid;gap:4px;text-align:left;border:1px solid var(--line);border-radius:8px;background:transparent;padding:10px;min-width:0}
+.plan-step b{font-size:14px}.plan-step small{font-size:11px;color:var(--muted)}
+.plan-step[aria-current="step"]{border-color:var(--ai);background:var(--ai-soft)}
+.plan-step.done{border-color:var(--ok);background:var(--ok-soft)}
+.plan-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.backup-actions{display:flex;flex-wrap:wrap;gap:6px}.backup-actions .btn{font-size:12px}
+.opt:disabled{cursor:default;color:var(--ink);opacity:1}.opt:disabled:hover{border-color:var(--line)}
+.opt.right:disabled:hover{border-color:var(--ok)}.opt.wrong:disabled:hover{border-color:var(--ng)}
+.review-count{font-family:var(--f-mono);font-size:20px;color:var(--ai)}
+.source-note{font-size:12px;color:var(--muted);margin-top:4px}
+.skip-link{position:fixed;top:8px;left:16px;transform:translateY(-160%);z-index:30;background:var(--card);padding:8px 12px;color:var(--ai)}
+.skip-link:focus{transform:none}
+@media (max-width:560px){
+ .plan-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .panel{padding:16px}.packbar{width:100%}.packbar select{width:100%;min-width:0}
+ .plan-step{min-height:72px}.opt{padding:11px 12px;min-height:46px}
+ nav.tabs button{min-height:44px}.btn{min-height:40px}
+ .count{gap:6px 10px}.count span{font-size:12px}
+}
 @media (max-width:860px){
   .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
   .side{position:static;display:contents}
@@ -210,6 +236,7 @@ mark.blank{background:var(--mark);color:var(--mark-ink);border-radius:4px;paddin
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
+<a class="skip-link" href="#main">跳到学习内容</a>
 <div class="wrap">
   <header class="top">
     <div class="brand">
@@ -217,7 +244,7 @@ mark.blank{background:var(--mark);color:var(--mark-ink);border-radius:4px;paddin
       <span class="sub" id="weekLabel"></span>
     </div>
     <div class="count">
-      <span>本番 2027-07-04（日）まで</span><b id="daysLeft">—</b><span>日</span>
+      <span>备考目标 2027-07-04（日，暂定）</span><b id="daysLeft">—</b><span>天</span>
     </div>
     <div class="packbar" id="packbar"></div>
   </header>
@@ -227,9 +254,9 @@ mark.blank{background:var(--mark);color:var(--mark-ink);border-radius:4px;paddin
     <div class="side-foot" id="sideFoot"></div>
   </div>
 
-  <main id="main"></main>
+  <main id="main" tabindex="-1"></main>
 </div>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
 /* ================= 周文法主题（W1 = 2026-10-19 那一周）================= */
@@ -295,7 +322,7 @@ function runClip(a,c,rate,onend,fallback){
   a.onended=finish; a.onerror=()=>{ diag("last","音频出错 code "+(a.error&&a.error.code)); if(!done){ done=true; clipStop=null; fallback(); } };
   if(a.readyState>=1) start(); else a.addEventListener("loadedmetadata",start,{once:true});
 }
-async function ensureAudio(id){ if(!id||id in store.audio) return; store.audio[id]=null; try{ const r=await fetch(`audio/${id}/index.json`); if(r.ok){ const m=await r.json(); store.audio[id]=m; if(m.file) dayEl(`audio/${id}/${m.file}`).catch(()=>{}); if(id===currentId) rerender(); } }catch(e){} }
+async function ensureAudio(id){ if(!id||id in store.audio) return; store.audio[id]=null; try{ const r=await fetch(`audio/${id}/index.json`); if(r.ok){ const m=await r.json(); store.audio[id]=m; if(m.file) dayEl(`audio/${id}/${m.file}`).catch(()=>{}); if(id===currentId){if(timer.running||stopper||curAudio||game)renderSideFoot();else rerender();} } }catch(e){} }
 function ttsSpeak(text,{onend,rate}={}){ diag("last","用了本机朗读"); if(!tts.ok){toast("这个浏览器不支持语音朗读");onend&&onend();return;} const u=new SpeechSynthesisUtterance(plain(text)); u.lang="ja-JP"; if(tts.voice) u.voice=tts.voice; u.rate=rate||tts.rate; if(onend){u.onend=onend;u.onerror=onend;} speechSynthesis.speak(u); }
 function speak(text,{onend,rate,key}={}){
   stopAudio(); if(tts.ok) speechSynthesis.cancel(); markListenActivity();
@@ -331,7 +358,40 @@ document.body.classList.toggle("nopitch",!lsGet("n2pitch",false));
 
 /* ================= 存储：教材 = 页面自带文件（packs/）+ 云端 db 里点按钮生成的；进度每人私有 ================= */
 const store = { db:null, uid:null, sample:null, files:{}, packs:{}, audio:{}, loaded:false, progress:{days:{},wrong:[],arena:{}}, saving:false, dirty:false };
-const P = () => { const d=store.progress.days; const x=d[TODAY] ||= {}; x.listenSec??=0; x.vocab??=[]; x.gram??=[]; x.shadow??=[]; x.arena??={}; x.qs??={}; return x; };
+/* ================= Progress helpers (also exercised by tools/ui-check.js) ================= */
+function qid(q){ return String(q.q)+"｜"+(q.options||[]).join("｜"); }
+function mergeRecord(a={},b={}){
+  const r={...b,...a};
+  r.listenSec=Math.max(Number(a.listenSec)||0,Number(b.listenSec)||0);
+  for(const k of ["vocab","gram","shadow"]) r[k]=[...new Set([...(a[k]||[]),...(b[k]||[])])];
+  for(const k of ["qs","choices","answered"]) r[k]={...(b[k]||{}),...(a[k]||{})};
+  r.arena={...(b.arena||{})}; for(const [k,v] of Object.entries(a.arena||{})) r.arena[k]=Math.max(v,r.arena[k]||0);
+  for(const k of ["role","culture","adult"]) r[k]=!!(a[k]||b[k]);
+  return r;
+}
+function mergeProgress(a={},b={}){
+  const prepare=p=>{
+    p=JSON.parse(JSON.stringify(p||{})); p.days||={}; p.materials||={};
+    if(p.version!==2) for(const [id,day] of Object.entries(p.days)){
+      if(!p.materials[id]) p.materials[id]=JSON.parse(JSON.stringify(day));
+    }
+    return p;
+  };
+  a=prepare(a); b=prepare(b);
+  const mergeMap=(x={},y={})=>Object.fromEntries([...new Set([...Object.keys(y),...Object.keys(x)])].map(k=>[k,mergeRecord(x[k],y[k])]));
+  const wrong=new Map();
+  for(const q of [...(a.wrong||[]),...(b.wrong||[])]) if(!wrong.has(qid(q))) wrong.set(qid(q),q);
+  return {version:2,days:mergeMap(a.days,b.days),materials:mergeMap(a.materials,b.materials),wrong:[...wrong.values()].slice(0,300),arena:{...(b.arena||{}),...(a.arena||{})}};
+}
+function materialProgress(progress,id){
+  progress.materials||={}; const x=progress.materials[id]||={};
+  x.listenSec??=0; x.vocab??=[]; x.gram??=[]; x.shadow??=[]; x.arena??={}; x.qs??={}; x.choices??={};
+  return x;
+}
+/* ================= End progress helpers ================= */
+const P = () => materialProgress(store.progress,currentId||TODAY);
+function activity(){ return store.progress.days[TODAY] ||= {}; }
+function recordAnswer(key){ const d=activity(); d.answered||={}; d.answered[`${currentId}:${key}`]=true; }
 let saveT;
 function saveProgress(){ lsSet("n2progress",store.progress); clearTimeout(saveT); saveT=setTimeout(flushProgress,1500); }
 async function flushProgress(){ if(!store.db||!store.uid) return; if(store.saving){store.dirty=true;return;} store.saving=true; try{ await store.db.doc(`data/users/${store.uid}/progress`).set(JSON.parse(JSON.stringify(store.progress))); }catch(e){ if(e&&e.code==="invalid_argument") store.db=null; } store.saving=false; if(store.dirty){store.dirty=false;flushProgress();} }
@@ -353,7 +413,6 @@ async function initCloud(){
       rerender(); } }
   }catch(e){ /* 云端不可用时，用本机存储继续 */ }
 }
-function mergeProgress(a,b){ a=JSON.parse(JSON.stringify(a||{})); b=JSON.parse(JSON.stringify(b||{})); return {days:{...(b.days||{}),...(a.days||{})},wrong:(a.wrong||[]).length>=(b.wrong||[]).length?a.wrong||[]:b.wrong||[],arena:{...(b.arena||{}),...(a.arena||{})}}; }
 store.progress = mergeProgress(lsGet("n2progress",{}),{days:{},wrong:[],arena:{}});
 Object.assign(store.packs, lsGet("n2packs",{}));
 
@@ -385,11 +444,13 @@ function renderTabs(){
   TABS.filter(t=>t.id!=="adult"||showAdult()).forEach(t=>{ const b=el("button",{role:"tab","aria-selected":String(t.id===tab),id:"tab-"+t.id});
     const s=st[t.id], done=s&&s.done;
     b.innerHTML=`<span class="k">${t.k}</span><span class="t">${t.t}<small>${t.s}</small></span>${s?`<span class="dot ${done?"done":""}" title="${esc(s.label)}">${done?"済":""}</span>`:"<span></span>"}`;
+    b.setAttribute("aria-controls","study-view"); b.tabIndex=t.id===tab?0:-1;
+    b.onkeydown=e=>{ if(!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","End"].includes(e.key))return; e.preventDefault(); const bs=[...nav.querySelectorAll('[role="tab"]')]; const i=bs.indexOf(b); const n=e.key==="Home"?0:e.key==="End"?bs.length-1:(i+(["ArrowRight","ArrowDown"].includes(e.key)?1:-1)+bs.length)%bs.length; bs[n].click(); document.getElementById(bs[n].id)?.focus(); };
     b.onclick=()=>go(t.id); nav.append(b); });
-  renderSideFoot();
+  renderSideFoot(); renderStudyPlan();
 }
 document.addEventListener("change",e=>{ if(e.target&&e.target.id==="adultT"){ lsSet("n2adult",e.target.checked); if(!e.target.checked&&tab==="adult") tab="listen"; rerender(); } });
-function go(id){ stopAll(); tab=id; lsSet("n2tab",id); rerender(); window.scrollTo({top:0}); }
+function go(id){ stopAll(); if(id!=="arena") game=null; tab=id; lsSet("n2tab",id); history.replaceState(null,"","#"+id); rerender(); window.scrollTo({top:0}); document.getElementById("tab-"+id)?.scrollIntoView({block:"nearest",inline:"nearest"}); }
 function renderSideFoot(){
   const f=$("#sideFoot"); const days=Object.values(store.progress.days);
   const totalMin=Math.round(days.reduce((a,d)=>a+(d.listenSec||0),0)/60);
@@ -397,9 +458,42 @@ function renderSideFoot(){
   f.innerHTML=`<div>连续打卡 <b>${streak()}</b> 天 · 累计听力 <b>${totalMin}</b> 分 · 錯題 <b>${store.progress.wrong.length}</b></div>
   <div>合格线：总分 ≥ 90 / 180，言語知識・読解・聴解 每科 ≥ 19 / 60。</div>
   <div>${store.db?"进度已同步到你的账号。":"进度保存在这台设备的浏览器里。"}</div>
+  <div class="backup-actions"><button class="btn small" id="exportProgress">备份记录</button><button class="btn small" id="importProgress">恢复备份</button><input type="file" id="progressFile" accept="application/json,.json" hidden></div>
   ${IN_CLAUDE?"":`<div><label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="adultT" ${showAdult()?"checked":""}> 显示 18+ 栏目（大人の会話）</label></div>`}
   <div id="audioDiag">音频：${esc(audioDiag.state)}${audioDiag.last?" · "+esc(audioDiag.last):""}</div>
   ${m?`<div>配音：${(m.credits||[]).map(c=>"VOICEVOX:"+esc(c)).join("、")}</div>`:""}`;
+  $("#exportProgress",f).onclick=exportProgress;
+  const file=$("#progressFile",f); $("#importProgress",f).onclick=()=>file.click(); file.onchange=()=>importProgress(file.files[0]);
+}
+function exportProgress(){
+  const blob=new Blob([JSON.stringify({app:"n2-dojo",exportedAt:new Date().toISOString(),progress:store.progress},null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob), a=el("a",{href:url,download:`n2-dojo-progress-${TODAY}.json`}); a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); toast("备份已下载，可在另一台设备恢复");
+}
+async function importProgress(file){
+  if(!file)return;
+  try{
+    if(file.size>5*1024*1024)throw new Error("备份文件不能超过 5MB");
+    const parsed=JSON.parse(await file.text()), p=parsed.progress||parsed;
+    if(!p||!p.days||typeof p.days!=="object"||Array.isArray(p.days)||!Array.isArray(p.wrong))throw new Error("不是有效的学习记录备份");
+    for(const k of ["days","materials"]){ if(p[k]&&(typeof p[k]!=="object"||Array.isArray(p[k])))throw new Error("记录格式不正确"); for(const [id,d] of Object.entries(p[k]||{})){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(id)||!d||typeof d!=="object"||Array.isArray(d))throw new Error("教材记录格式不正确");
+      for(const key of ["vocab","gram","shadow"])if(d[key]&&!Array.isArray(d[key]))throw new Error("进度格式不正确");
+      if(d.listenSec!=null&&(!Number.isFinite(d.listenSec)||d.listenSec<0))throw new Error("听力时间格式不正确");
+    }}
+    if(!p.wrong.every(q=>q&&typeof q.q==="string"&&Array.isArray(q.options)&&Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.options.length))throw new Error("错题格式不正确");
+    stopAll(); game=null; store.progress=mergeProgress(store.progress,p); saveProgress(); rerender(); toast("记录已合并，保留现有进度与错题");
+  }catch(e){toast("恢复失败："+(e.message||"文件无法读取"));}
+}
+function renderStudyPlan(){
+  const host=$("#studyPlan"); if(!host||!pack())return;
+  const st=status(), steps=[["vocab","词汇·语法","30 分钟"],["listen","听力训练","30 分钟"],["read","阅读理解","20 分钟"],["arena","题型练习","40 分钟"]];
+  const completed=steps.filter(([id])=>st[id]?.done).length;
+  const expanded=lsGet("n2planExpanded",window.matchMedia("(min-width:861px)").matches);
+  host.innerHTML=`<div class="plan-top"><h2>${currentId===TODAY?"今天的学习路线":"这套教材的学习路线"}</h2><span class="plan-score">${completed} / 4 项</span></div><div class="small muted">${esc(currentId)} · ${esc(pack().theme||"")}<div class="source-note">原创练习 · 按 JLPT 题型编写，不是历年真题</div></div><div class="plan-details" id="study-plan-details" ${expanded?"":"hidden"}><div class="plan-steps"></div></div><div class="bar"><i style="width:${completed/4*100}%"></i></div><div class="plan-bottom"><button class="btn small" id="planToggle" aria-expanded="${expanded}" aria-controls="study-plan-details">${expanded?"收起学习安排":"查看 2 小时安排"}</button><button class="btn small" id="reviewShortcut">复习错题（${store.progress.wrong.length}）</button></div>`;
+  const grid=$(".plan-steps",host);
+  steps.forEach(([id,title,time],i)=>{const b=el("button",{class:"plan-step"+(st[id]?.done?" done":""),...(tab===id?{"aria-current":"step"}:{})},`<small>${st[id]?.done?"已完成":String(i+1).padStart(2,"0")} · ${time}</small><b>${title}</b><small>${esc(st[id]?.label||"待开始")}</small>`);b.onclick=()=>go(id);grid.append(b);});
+  $("#reviewShortcut",host).onclick=()=>go("wrong");
+  $("#planToggle",host).onclick=()=>{lsSet("n2planExpanded",!expanded);renderStudyPlan();};
 }
 
 /* ================= 完成度（做了就算，不用按“完成”）================= */
@@ -417,26 +511,28 @@ function status(){
     adult:{done:!!d.adult, label:d.adult?"看过":"没看"}
   };
 }
-function streak(){ let n=0; const d=new Date(today); for(;;){ const k=dayKey(d); const x=store.progress.days[k]; if(x&&(x.listenSec>=1800||Object.keys(x.arena||{}).length>=3)){n++; d.setDate(d.getDate()-1);} else if(k===TODAY){ d.setDate(d.getDate()-1);} else break; if(n>400)break; } return n; }
+function streak(){ let n=0; const d=new Date(today); for(;;){ const k=dayKey(d); const x=store.progress.days[k]; if(x&&(x.listenSec>=1800||Object.keys(x.arena||{}).length>=3||Object.keys(x.answered||{}).length>=5)){n++; d.setDate(d.getDate()-1);} else if(k===TODAY){ d.setDate(d.getDate()-1);} else break; if(n>400)break; } return n; }
 
 /* ================= 渲染 ================= */
-let stopper=null; function stopAll(){ if(stopper){stopper();stopper=null;} stopAudio(); if(tts.ok) speechSynthesis.cancel(); pauseTimer(); }
+let stopper=null; function stopAll(){ if(stopper){stopper();stopper=null;} stopAudio(); if(tts.ok) speechSynthesis.cancel(); pauseTimer(); for(const reset of playbackButtons)reset(); }
 function rerender(){
   if(tab==="adult"&&!showAdult()) tab="listen";
   if(!currentId||!getPack(currentId)) pickCurrent(); ensureAudio(currentId);
   $("#daysLeft").textContent=Math.max(0,Math.round((EXAM-today)/864e5));
   $("#weekLabel").textContent=weekTheme;
   renderPackbar(); renderTabs();
+  playbackButtons.clear();
   const m=$("#main"); m.innerHTML="";
-  const v=el("section",{class:"view",role:"tabpanel","aria-labelledby":"tab-"+tab});
+  const v=el("section",{class:"view",id:"study-view",role:"tabpanel","aria-labelledby":"tab-"+tab});
   if(!pack()){ v.append(el("div",{class:"empty"},store.loaded?"没有找到教材文件。":"教材加载中……")); m.append(v); return; }
+  m.append(el("section",{id:"studyPlan",class:"panel study-plan","aria-label":"学习进度与路线"})); renderStudyPlan();
   ({listen:vListen,read:vRead,vocab:vVocab,speak:vSpeak,arena:vArena,culture:vCulture,adult:vAdult,songs:vSongs,wrong:vWrong})[tab](v);
   m.append(v);
 }
 function renderPackbar(){
   const b=$("#packbar"); b.innerHTML=""; const ids=packIds(); if(!ids.length) return;
   const s=el("select",{"aria-label":"切换教材"}); s.innerHTML=ids.slice().reverse().map(i=>`<option value="${i}" ${i===currentId?"selected":""}>${i.slice(5).replace("-","/")}${i===TODAY?"（今日）":""} · ${esc((getPack(i)||{}).theme||"")}</option>`).join("");
-  s.onchange=()=>{ stopAll(); currentId=s.value; rerender(); }; b.append(s);
+  s.onchange=()=>{ stopAll(); game=null; gameResult=null; currentId=s.value; rerender(); }; b.append(s);
   if(!ids.includes(TODAY)&&store.sample){ const g=el("button",{class:"btn pri small"},"生成今日教材"); g.onclick=()=>generatePack(g); b.append(g); }
 }
 function head(v,title,eyebrow,extra=""){ const h=el("div",{class:"h2row"},`<div><div class="eyebrow">${eyebrow}</div><h2>${title}</h2></div>${extra}`); v.append(h); return h; }
@@ -449,7 +545,7 @@ function sayable(node,text,key,opts={}){ node.classList.add("say-t"); node.setAt
 /* 問題9 文章の文法：显示文章，把当前这一空标出来 */
 function passageHTML(paras,blank){ const b=esc(blank); return `<div class="passage gap">${paras.map(x=>`<p>${rb(x).split(b).join(`<mark class="blank">${b}</mark>`)}</p>`).join("")}</div>`; }
 function expBox(q,chosen){
-  const right=chosen===q.answer, box=el("div",{class:"explain"});
+  const right=chosen===q.answer, box=el("div",{class:"explain","aria-live":"polite"});
   const verdict=chosen==null?`<div class="verdict">答案 ${q.answer+1}</div>`:right?`<div class="verdict ok">✓ 正解</div>`:`<div class="verdict ng">✗ 你选了 ${chosen+1}，答案是 ${q.answer+1}</div>`;
   const why=Array.isArray(q.why)&&q.why.length===q.options.length?`<ol class="why">${q.options.map((o,i)=>{ const t=String(q.why[i]||"").replace(/^✓\s*/,""); return `<li class="${i===q.answer?"ans":i===chosen?"bad":""}"><span class="n">${i===q.answer?"✓":i+1}</span><span><span class="o">${rb(o)}</span>${t&&t!=="—"?"　"+rb(t):""}</span></li>`; }).join("")}</ol>`:"";
   box.innerHTML=verdict+(q.explain?`<p>${rb(q.explain)}</p>`:"")+why+(q.point?`<div class="point"><b>要点</b>${rb(q.point)}</div>`:"");
@@ -461,23 +557,22 @@ function qBlock(q,key,onAnswer){
   const opts=el("div",{class:"opts"}); const slot=el("div");
   q.options.forEach((o,i)=>{ const b=el("button",{class:"opt"},`<span class="n">${i+1}</span><span>${rb(o)}</span>`);
     b.onclick=()=>{ if(box.dataset.done) return; box.dataset.done="1"; const right=i===q.answer;
-      b.classList.add(right?"right":"wrong"); opts.children[q.answer].classList.add("right");
+      b.classList.add(right?"right":"wrong"); opts.children[q.answer].classList.add("right"); [...opts.children].forEach(x=>x.disabled=true);
       safe(()=>slot.replaceChildren(expBox(q,i)));
-      safe(()=>{ if(key){ d.qs[key]=right; } if(!right) addWrong(q); onAnswer&&onAnswer(right); saveProgress(); renderTabs(); }); };
+      safe(()=>{ if(key){ d.qs[key]=right; d.choices[key]=i; } recordAnswer(key||qid(q)); if(!right) addWrong(q); onAnswer&&onAnswer(right); saveProgress(); renderTabs(); }); };
     opts.append(b); });
-  if(key && key in d.qs){ box.dataset.done="1"; opts.children[q.answer].classList.add("right"); slot.replaceChildren(expBox(q,null)); }
+  if(key && key in d.qs){ box.dataset.done="1"; const choice=d.choices[key]; opts.children[q.answer].classList.add("right"); if(Number.isInteger(choice)&&choice!==q.answer)opts.children[choice]?.classList.add("wrong"); [...opts.children].forEach(x=>x.disabled=true); const explanation=expBox(q,Number.isInteger(choice)?choice:null); if(!Number.isInteger(choice)&&d.qs[key]===false)$(".verdict",explanation).textContent=`上次答错 · 正确答案 ${q.answer+1}`; slot.replaceChildren(explanation); }
   box.append(opts,slot); return box;
 }
 /* 出错也不能卡住做题：把错误弹出来，方便报告 */
 function safe(fn){ try{ fn(); }catch(e){ console.error(e); toast("出了点问题："+(e&&e.message||e)); } }
-const qid = q => String(q.q)+"｜"+(q.options||[]).join("｜");
-function addWrong(q){ if(!Array.isArray(store.progress.wrong)) store.progress.wrong=Object.values(store.progress.wrong||{}); const w=store.progress.wrong; if(w.some(x=>qid(x)===qid(q))) return; w.unshift({q:q.q,options:q.options,answer:q.answer,explain:q.explain,why:q.why,point:q.point,passage:q.passage,from:currentId}); if(w.length>300) w.length=300; }
+function addWrong(q){ if(!Array.isArray(store.progress.wrong)) store.progress.wrong=Object.values(store.progress.wrong||{}); const w=store.progress.wrong; if(w.some(x=>qid(x)===qid(q))) return; w.unshift({q:q.q,options:q.options,answer:q.answer,explain:q.explain,why:q.why,point:q.point,passage:q.passage,reply:!!q.reply,from:q.from||currentId}); if(w.length>300) w.length=300; }
 
 /* --- 聴解 --- */
 let timer={running:false,t0:0,iv:null};
 function curSec(){ return P().listenSec + (timer.running?Math.floor((Date.now()-timer.t0)/1000):0); }
 function startTimer(){ if(timer.running) return; timer.running=true; timer.t0=Date.now(); timer.iv=setInterval(tickClock,1000); tickClock(); }
-function pauseTimer(){ if(!timer.running) return; const add=Math.floor((Date.now()-timer.t0)/1000); timer.running=false; clearInterval(timer.iv); if(add>0){ P().listenSec+=add; saveProgress(); } tickClock(); }
+function pauseTimer(){ if(!timer.running) return; const add=Math.floor((Date.now()-timer.t0)/1000); timer.running=false; clearInterval(timer.iv); if(audioDiag.last.includes("播放中"))diag("last","播放已停止"); if(add>0){ P().listenSec+=add; const d=activity(); d.listenSec=(d.listenSec||0)+add; saveProgress(); renderTabs(); } tickClock(); }
 function tickClock(){ const c=$("#clock"); if(!c) return; const s=curSec(); c.textContent=`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; const b=$("#clockBar"); if(b) b.style.width=Math.min(100,s/1800*100)+"%"; const st=$("#clockState"); if(st) st.textContent=timer.running?"计时中":"播放时自动计时"; if(s>=1800&&timer.running&&!timer.notified){timer.notified=true;toast("今天的 30 分钟听力完成了！");} }
 function markListenActivity(){ if(tab==="listen") startTimer(); }
 document.addEventListener("visibilitychange",()=>{ if(document.hidden) pauseTimer(); });
@@ -485,14 +580,16 @@ function lineList(lines,prefix,{pitchOpt=true}={}){
   const ul=el("ol",{class:"lines"});
   lines.forEach((ln,i)=>{ const li=el("li",{class:"line","data-i":i}); const key=prefix+i;
     li.innerHTML=`${ln.sp?`<div class="sp">${esc(ln.sp)}</div>`:""}<div class="ja">${rb(ln.ja)}</div>${pitchLine(key,pitchOpt)}<div class="zh hideable">${esc(ln.zh)}</div>`;
-    sayable($(".ja",li),ln.ja,key,{before:()=>{ stopAll(); hl(ul,i); },onend:()=>hl(ul,-1)});
+    sayable($(".ja",li),ln.ja,key,{before:()=>{ stopAll(); if(tab==="listen")startTimer(); hl(ul,i); },onend:()=>{hl(ul,-1);pauseTimer();}});
     ul.append(li); });
   return ul;
 }
 function hl(ul,i){ ul.querySelectorAll(".line").forEach((x,j)=>x.classList.toggle("playing",j===i)); }
+const playbackButtons=new Set();
 function playAllBtn(lines,prefix,ulOf,extra){ const play=el("button",{class:"btn pri"},"▶ 全文播放");
   const reset=()=>{ play.textContent="▶ 全文播放"; play.onclick=start; };
-  const start=()=>{ stopAll(); extra&&extra(); play.textContent="■ 停止"; const ul=ulOf(); stopper=speakSeq(lines.map(l=>l.ja),i=>ul&&hl(ul,i),()=>{stopper=null;reset();},lines.map((_,i)=>prefix+i)); play.onclick=()=>{ stopAll(); reset(); }; };
+  playbackButtons.add(reset);
+  const start=()=>{ stopAll(); extra&&extra(); play.textContent="■ 停止"; const ul=ulOf(); stopper=speakSeq(lines.map(l=>l.ja),i=>ul&&hl(ul,i),()=>{stopper=null;pauseTimer();reset();},lines.map((_,i)=>prefix+i)); play.onclick=()=>{ stopAll(); reset(); }; };
   play.onclick=start; return play; }
 function vListen(v){
   head(v,"聴解トレーニング","每日 30 分钟 · 新闻 / 动画 / 日剧");
@@ -507,10 +604,11 @@ function vListen(v){
     const h=el("div",{class:"seg-head"},`<div><span class="chip">${esc(seg.label)}</span> <span class="chip">${esc(seg.task||"ポイント理解")}</span><h3 style="margin-top:6px">${rb(seg.title)}</h3><div class="small muted">${esc(seg.setting||"")}</div></div>`);
     const det=el("details",{class:"fold"});
     h.append(playAllBtn(seg.lines,`L${si}-`,()=>det.open?$(".lines",det):null,startTimer)); p.append(h);
-    if(seg.tip) p.append(el("p",{class:"tip",style:"margin:0"},`<b>听力技巧：</b>${rb(seg.tip)}`));
     const qs=el("div",{class:"qs"});
     const allDone=()=>seg.questions.every((_,qi)=>`L${si}-${qi}` in d.qs);
-    seg.questions.forEach((q,qi)=>qs.append(qBlock(q,`L${si}-${qi}`,()=>{ if(allDone()) det.open=true; })));
+    let tip=null;
+    if(seg.tip){ tip=el("details",{class:"fold"}); tip.innerHTML=`<summary>听力技巧（听后再看）</summary><p class="tip">${rb(seg.tip)}</p>`; tip.open=allDone(); p.append(tip); }
+    seg.questions.forEach((q,qi)=>qs.append(qBlock(q,`L${si}-${qi}`,()=>{ if(allDone()){det.open=true;if(tip)tip.open=true;} })));
     p.append(qs);
     det.innerHTML=`<summary>文字稿（做完题再看）</summary>`; det.append(lineList(seg.lines,`L${si}-`)); if(allDone()) det.open=true;
     p.append(det); v.append(p);
@@ -610,25 +708,30 @@ async function correctRole(btn,ta,box,rp){
 }
 
 /* --- 闘技場 --- */
-let game=null;
+let game=null, gameResult=null;
 function vArena(v){
   if(game) return vGame(v);
-  head(v,"闘技場","按 N2 真题题型 · 每关 5 题 · 3 颗心");
+  head(v,"闘技場","原创题 · 按 N2 题型 · 每关 5 题 · 3 颗心");
+  if(gameResult){
+    const r=gameResult, p=el("div",{class:"panel",role:"status"});
+    p.innerHTML=`<div class="eyebrow">${esc(r.name)} · 本轮结果</div><h3 style="margin:8px 0">答对 ${r.right} / ${r.answered} 题</h3><p class="small muted">${r.answered<r.total?`本轮共 ${r.total} 题，尚有 ${r.total-r.answered} 题未作答。`:"本轮已完成。"}${r.review?` 本轮掌握 ${r.right} 道，剩余错题 ${store.progress.wrong.length} 道。`:" 错题已自动保存，可在错题本再次练习。"}</p>`;
+    const b=el("button",{class:"btn"},"去错题本");b.onclick=()=>go("wrong");p.append(b);v.append(p);
+  }
   const d=P(); const grid=el("div",{class:"arenas"});
   pack().arena.forEach((a,i)=>{ const best=(d.arena||{})[i];
     const b=el("button",{class:"stage"});
     b.innerHTML=`<span class="small muted">第 ${i+1} 関</span><b>${esc(a.name)}</b><span class="small muted">${esc(a.zh)}</span><span class="stars">${[0,1,2].map(k=>`<span class="${best!==undefined&&k<best?"":"off"}">★</span>`).join("")}</span>`;
-    b.onclick=()=>{ game={idx:i,items:a.items.map(it=>a.passage?{...it,passage:a.passage}:it),name:a.name,zh:a.zh,reply:!!a.reply,qi:0,hearts:3,right:0,answered:false}; rerender(); };
+    b.onclick=()=>{ gameResult=null; game={idx:i,packId:currentId,items:a.items.map(it=>({...it,from:currentId,reply:!!a.reply,...(a.passage?{passage:a.passage}:{})})),name:a.name,zh:a.zh,reply:!!a.reply,qi:0,hearts:3,right:0,answered:false}; rerender(); };
     grid.append(b); });
   v.append(grid);
   const mix=el("div",{class:"panel row",style:"justify-content:space-between"});
   mix.innerHTML=`<div><b>ランダム 10 問</b><div class="small muted">从所有教材和錯題本里随机抽 10 题，不计入当天关卡。</div></div>`;
-  const mb=el("button",{class:"btn pri"},"开始挑战"); mb.onclick=()=>{ const pool=[]; packIds().forEach(id=>{const pk=getPack(id); pk&&pk.arena.forEach(a=>a.items.forEach(it=>pool.push({...it,reply:!!a.reply,passage:a.passage})));}); store.progress.wrong.forEach(w=>pool.push(w)); for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];} game={idx:-1,items:pool.slice(0,10),name:"ランダム 10 問",qi:0,hearts:3,right:0,answered:false}; rerender(); };
+  const mb=el("button",{class:"btn pri"},"开始挑战"); mb.onclick=()=>{ const pool=[]; packIds().forEach(id=>{const pk=getPack(id); pk&&pk.arena.forEach(a=>a.items.forEach(it=>pool.push({...it,from:id,reply:!!a.reply,passage:a.passage})));}); store.progress.wrong.forEach(w=>pool.push(w)); const unique=[...new Map(pool.map(q=>[qid(q),q])).values()]; for(let i=unique.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[unique[i],unique[j]]=[unique[j],unique[i]];} gameResult=null;game={idx:-1,items:unique.slice(0,10),name:"ランダム 10 問",qi:0,hearts:3,right:0,answered:false}; rerender(); };
   mix.append(mb); v.append(mix);
 }
 function vGame(v){
   const g=game; const q=g.items[g.qi];
-  const top=el("div",{class:"game-top"},`<div><div class="eyebrow">${esc(g.name)}${g.zh?" · "+esc(g.zh):""}</div><h2 style="font-size:22px">第 ${g.qi+1} / ${g.items.length} 問</h2></div><div class="hearts" aria-label="剩余 ${g.hearts} 颗心">${"♥".repeat(g.hearts)}${"♡".repeat(3-g.hearts)}</div>`);
+  const top=el("div",{class:"game-top"},`<div><div class="eyebrow">${esc(g.name)}${g.zh?" · "+esc(g.zh):""}</div><h2 style="font-size:22px">第 ${g.qi+1} / ${g.items.length} 問</h2></div>${g.review?'<span class="chip">复习模式 · 不扣心</span>':`<div class="hearts" aria-label="剩余 ${g.hearts} 颗心">${"♥".repeat(g.hearts)}${"♡".repeat(3-g.hearts)}</div>`}`);
   const quit=el("button",{class:"btn ghost"},"退出"); quit.onclick=()=>{game=null;stopAll();rerender();}; top.append(quit);
   v.append(top);
   const p=el("div",{class:"panel game"});
@@ -644,21 +747,23 @@ function vGame(v){
   q.options.forEach((o,i)=>{ const b=el("button",{class:"opt"},`<span class="n">${i+1}</span><span>${rb(o)}</span>`);
     b.onclick=()=>{ if(g.answered) return; g.answered=true; const ok=i===q.answer;
       b.classList.add(ok?"right":"wrong"); opts.children[q.answer].classList.add("right");
-      if(ok) g.right++; else g.hearts--;
+      [...opts.children].forEach(x=>x.disabled=true);
+      if(ok)g.right++;else if(!g.review)g.hearts--;
+      recordAnswer(`arena:${qid(q)}`); if(g.review&&ok)store.progress.wrong=store.progress.wrong.filter(w=>qid(w)!==qid(q));
+      if(!ok)safe(()=>addWrong({...q,reply:!!isReply})); saveProgress();renderTabs();
       next.hidden=false; if(g.hearts<=0){ next.textContent="看结果"; }
       $(".hearts",v)&&($(".hearts",v).textContent="♥".repeat(Math.max(0,g.hearts))+"♡".repeat(3-Math.max(0,g.hearts)));
       safe(()=>{ if(isReply){ showStem(); if(akey&&pitchOf(akey)) stem.insertAdjacentHTML("beforeend",pitchLine(akey,false)); } });
-      safe(()=>slot.replaceChildren(expBox(q,i)));
-      if(!ok) safe(()=>{ addWrong(q); saveProgress(); }); };
+      safe(()=>slot.replaceChildren(expBox(q,i))); next.focus({preventScroll:true}); };
     opts.append(b); });
   next.onclick=()=>{ if(g.hearts<=0||g.qi+1>=g.items.length){ finishGame(); } else { g.qi++; g.answered=false; rerender(); } };
   p.append(opts,slot,next); v.append(p);
 }
 function finishGame(){
   const g=game; const stars=g.hearts<=0?0:(g.right>=g.items.length?3:g.right>=g.items.length-1?2:g.right>=Math.ceil(g.items.length*0.6)?1:0);
-  if(g.idx>=0 && stars>0){ const a=P().arena||(P().arena={}); a[g.idx]=Math.max(a[g.idx]||0,stars); saveProgress(); }
-  toast(g.hearts<=0?`心用完了，答对 ${g.right} 题。错题已放进錯題本。`:`答对 ${g.right}/${g.items.length}，获得 ${"★".repeat(stars)||"0 颗星"}`);
-  game=null; rerender();
+  if(g.idx>=0 && stars>0){ const a=materialProgress(store.progress,g.packId||currentId).arena; a[g.idx]=Math.max(a[g.idx]||0,stars); const day=activity();day.arena||={};day.arena[`${g.packId||currentId}:${g.idx}`]=stars; saveProgress(); }
+  toast(g.review?`复习完成：答对 ${g.right}/${g.items.length}，剩余错题 ${store.progress.wrong.length} 道。`:g.hearts<=0?`心用完了，答对 ${g.right} 题。错题已放进錯題本。`:`答对 ${g.right}/${g.items.length}，获得 ${"★".repeat(stars)||"0 颗星"}`);
+  gameResult={name:g.name,right:g.right,answered:g.qi+(g.answered?1:0),total:g.items.length,review:!!g.review}; game=null; rerender();
 }
 
 /* --- 文化 --- */
@@ -721,7 +826,9 @@ function vSongs(v){
 function vWrong(v){
   const w=store.progress.wrong;
   head(v,"錯題本",`${w.length} 题 · 答对一次就移出`);
-  if(!w.length){ v.append(el("div",{class:"empty"},"还没有错题。闯关、听力、读解答错的题会自动收进这里。")); return; }
+  if(!w.length){ v.append(el("div",{class:"empty"},"还没有待复习的错题。闯关、听力、读解和语法练习答错后会自动收进这里。")); const b=el("button",{class:"btn pri"},"去做题");b.onclick=()=>go("arena");v.append(b);return; }
+  const review=el("div",{class:"panel row",style:"justify-content:space-between"},`<div><b>把错题再做一遍</b><div class="small muted">随机最多 10 题 · 不扣心 · 答对后移出错题本</div></div>`);
+  const start=el("button",{class:"btn pri"},"开始错题复习");start.onclick=()=>{const items=[...w];for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}gameResult=null;game={idx:-1,review:true,items:items.slice(0,10),name:"错题集中复习",qi:0,hearts:3,right:0,answered:false};go("arena");};review.append(start);v.append(review);
   const list=el("div",{class:"wrongs"});
   w.slice(0,60).forEach(q=>{ const box=el("div",{class:"wr"}); box.append(el("div",{class:"small muted"},`来自 ${esc(q.from||"")}`)); box.append(qBlock(q,null,ok=>{ if(ok){ const i=w.indexOf(q); if(i>=0) w.splice(i,1); saveProgress(); setTimeout(rerender,1600);} })); list.append(box); });
   v.append(list);
