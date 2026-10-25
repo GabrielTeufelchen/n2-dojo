@@ -1,4 +1,5 @@
-<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.song-player,.song-course{display:grid;gap:12px}.song-player p,.song-course p{margin:6px 0}.song-local,.song-meaning,.song-test{border-top:1px solid var(--line);padding:16px 0 4px;margin-top:12px}summary{cursor:pointer;line-height:1.7}.song-meaning p{line-height:1.9;margin:14px 0}.song-question{padding:18px 0;border-bottom:1px solid var(--line)}.song-test .opts{display:grid;gap:8px}.song-local input[type=file]{max-width:100%}.song-course select{font:inherit;padding:8px;border-radius:8px}.song-course progress{accent-color:var(--ai)}
+</style></head><body>
 <!-- N2 道場：页面内容从这里开始（编辑说明见 README.md）-->
 <title>N2 道場</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -363,7 +364,7 @@ function qid(q){ return String(q.q)+"｜"+(q.options||[]).join("｜"); }
 function mergeRecord(a={},b={}){
   const r={...b,...a};
   r.listenSec=Math.max(Number(a.listenSec)||0,Number(b.listenSec)||0);
-  for(const k of ["vocab","gram","shadow"]) r[k]=[...new Set([...(a[k]||[]),...(b[k]||[])])];
+  for(const k of ["vocab","gram","shadow","learned"]) r[k]=[...new Set([...(a[k]||[]),...(b[k]||[])])];
   for(const k of ["qs","choices","answered"]) r[k]={...(b[k]||{}),...(a[k]||{})};
   r.arena={...(b.arena||{})}; for(const [k,v] of Object.entries(a.arena||{})) r.arena[k]=Math.max(v,r.arena[k]||0);
   for(const k of ["role","culture","adult"]) r[k]=!!(a[k]||b[k]);
@@ -381,7 +382,7 @@ function mergeProgress(a={},b={}){
   const mergeMap=(x={},y={})=>Object.fromEntries([...new Set([...Object.keys(y),...Object.keys(x)])].map(k=>[k,mergeRecord(x[k],y[k])]));
   const wrong=new Map();
   for(const q of [...(a.wrong||[]),...(b.wrong||[])]) if(!wrong.has(qid(q))) wrong.set(qid(q),q);
-  return {version:2,days:mergeMap(a.days,b.days),materials:mergeMap(a.materials,b.materials),wrong:[...wrong.values()].slice(0,300),arena:{...(b.arena||{}),...(a.arena||{})}};
+  return {version:2,days:mergeMap(a.days,b.days),materials:mergeMap(a.materials,b.materials),songs:mergeMap(a.songs,b.songs),wrong:[...wrong.values()].slice(0,300),arena:{...(b.arena||{}),...(a.arena||{})}};
 }
 function materialProgress(progress,id){
   progress.materials||={}; const x=progress.materials[id]||={};
@@ -477,9 +478,14 @@ async function importProgress(file){
     if(!p||!p.days||typeof p.days!=="object"||Array.isArray(p.days)||!Array.isArray(p.wrong))throw new Error("不是有效的学习记录备份");
     for(const k of ["days","materials"]){ if(p[k]&&(typeof p[k]!=="object"||Array.isArray(p[k])))throw new Error("记录格式不正确"); for(const [id,d] of Object.entries(p[k]||{})){
       if(!/^\d{4}-\d{2}-\d{2}$/.test(id)||!d||typeof d!=="object"||Array.isArray(d))throw new Error("教材记录格式不正确");
-      for(const key of ["vocab","gram","shadow"])if(d[key]&&!Array.isArray(d[key]))throw new Error("进度格式不正确");
+      for(const key of ["vocab","gram","shadow","learned"])if(d[key]&&!Array.isArray(d[key]))throw new Error("进度格式不正确");
       if(d.listenSec!=null&&(!Number.isFinite(d.listenSec)||d.listenSec<0))throw new Error("听力时间格式不正确");
     }}
+    if(p.songs&&(typeof p.songs!=="object"||Array.isArray(p.songs)))throw new Error("歌曲进度格式不正确");
+    for(const d of Object.values(p.songs||{})){
+      if(!d||typeof d!=="object"||!Array.isArray(d.learned)||!d.learned.every(Number.isInteger))throw new Error("歌曲学习标记格式不正确");
+      for(const k of ["qs","choices"])if(d[k]&&(typeof d[k]!=="object"||Array.isArray(d[k])))throw new Error("歌曲测验格式不正确");
+    }
     if(!p.wrong.every(q=>q&&typeof q.q==="string"&&Array.isArray(q.options)&&Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.options.length))throw new Error("错题格式不正确");
     stopAll(); game=null; store.progress=mergeProgress(store.progress,p); saveProgress(); rerender(); toast("记录已合并，保留现有进度与错题");
   }catch(e){toast("恢复失败："+(e.message||"文件无法读取"));}
@@ -514,7 +520,7 @@ function status(){
 function streak(){ let n=0; const d=new Date(today); for(;;){ const k=dayKey(d); const x=store.progress.days[k]; if(x&&(x.listenSec>=1800||Object.keys(x.arena||{}).length>=3||Object.keys(x.answered||{}).length>=5)){n++; d.setDate(d.getDate()-1);} else if(k===TODAY){ d.setDate(d.getDate()-1);} else break; if(n>400)break; } return n; }
 
 /* ================= 渲染 ================= */
-let stopper=null; function stopAll(){ if(stopper){stopper();stopper=null;} stopAudio(); if(tts.ok) speechSynthesis.cancel(); pauseTimer(); for(const reset of playbackButtons)reset(); }
+let stopper=null; function stopAll(){ stopSongAudio(); if(stopper){stopper();stopper=null;} stopAudio(); if(tts.ok) speechSynthesis.cancel(); pauseTimer(); for(const reset of playbackButtons)reset(); }
 function rerender(){
   if(tab==="adult"&&!showAdult()) tab="listen";
   if(!currentId||!getPack(currentId)) pickCurrent(); ensureAudio(currentId);
@@ -791,35 +797,93 @@ function vAdult(v){
   if(!P().adult){ P().adult=true; saveProgress(); renderTabs(); }
 }
 
-/* --- 日本の歌：音乐和歌词在官方渠道打开，这里按段讲单词和语法（歌词有版权，不收录原文） --- */
+/* --- 听歌课：用户提供的段落、官方播放器和本地音频 --- */
+let songAudio=null, songURL=null;
+function stopSongAudio(){ if(songAudio)songAudio.pause(); }
+function songProgress(id){ store.progress.songs||={}; return store.progress.songs[id]||={learned:[],qs:{},choices:{}}; }
+function songPlayer(cur){
+  const box=el('section',{class:'panel song-player','aria-label':'歌曲播放'});
+  box.append(el('h3',{},'01 / 先听原声'));
+  if(cur.media){
+    const m=cur.media;
+    box.append(el('p',{class:'small muted'},esc(m.label)));
+    const buttons=el('div',{class:'row'}), slot=el('div');
+    const embed=el('button',{class:'btn pri small'},'打开官方播放器');
+    embed.onclick=()=>{stopSongAudio();slot.replaceChildren(el('iframe',{src:`https://www.youtube-nocookie.com/embed/${m.youtube}`,title:m.label,allow:'encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'width:100%;aspect-ratio:16/9;border:0;border-radius:12px;margin-top:12px'}));embed.disabled=true;};
+    buttons.append(embed,el('a',{class:'btn small',href:`https://www.youtube.com/watch?v=${m.youtube}`,target:'_blank',rel:'noopener'},'在 YouTube 打开 ↗'));
+    if(m.source)buttons.append(el('a',{class:'btn small',href:m.source,target:'_blank',rel:'noopener'},'SMAP 原版唱片信息 ↗'));
+    box.append(buttons,slot,el('p',{class:'small muted'},'播放依赖 YouTube 和所在地区的可用性；无法播放时可打开官方页面，或使用下面的本地音频。'));
+  }
+  const local=el('details',{class:'song-local'});local.append(el('summary',{},'导入自己的原唱文件 · A–B 复读'));
+  local.append(el('p',{class:'small muted'},'文件只在当前浏览器内播放，不上传。刷新后需重新选择文件。A、B 由你按实际版本手动标记，不自动对应歌词。'));
+  const input=el('input',{type:'file',accept:'audio/*,video/mp4','aria-label':'选择本地原唱文件'}), status=el('p',{class:'small',role:'status'},'尚未选择音频'), audio=el('audio',{controls:'',preload:'metadata',style:'width:100%','aria-label':'本地原唱播放器'});
+  let a=0,b=null,loop=false;
+  const controls=el('div',{class:'row'}), markA=el('button',{class:'btn small',disabled:''},'标记 A'), markB=el('button',{class:'btn small',disabled:''},'标记 B'), play=el('button',{class:'btn small',disabled:''},'从 A 播放'), clear=el('button',{class:'btn small',disabled:''},'清除区间');
+  const loopLabel=el('label',{class:'small'}), check=el('input',{type:'checkbox',disabled:''});loopLabel.append(check,document.createTextNode(' 循环 A–B'));
+  const rate=el('select',{'aria-label':'原唱播放速度',disabled:''},'<option value="0.75">0.75×</option><option value="0.9">0.9×</option><option value="1" selected>1×</option>');
+  const region=el('p',{class:'small muted',role:'status'});
+  const show=()=>{region.textContent=`A ${a.toFixed(1)} 秒 → B ${b==null?'未设置':b.toFixed(1)+' 秒'}`;};show();
+  markA.onclick=()=>{a=audio.currentTime;if(b!=null&&b<=a){b=null;check.checked=false;loop=false;}show();};
+  markB.onclick=()=>{if(audio.currentTime<=a+0.25){toast('先播放到 A 点之后至少 0.25 秒，再标记 B');return;}b=audio.currentTime;show();};
+  play.onclick=()=>{audio.currentTime=a;audio.play().catch(()=>toast('音频暂时无法播放，请检查文件格式'));};
+  clear.onclick=()=>{a=0;b=null;loop=false;check.checked=false;show();};
+  check.onchange=()=>{if(check.checked&&b==null){check.checked=false;toast('请先标记 B 点');return;}loop=check.checked;};
+  rate.onchange=()=>audio.playbackRate=Number(rate.value);
+  audio.onplay=()=>{box.querySelectorAll('iframe').forEach(x=>x.remove());const button=box.querySelector('button');if(cur.media&&button)button.disabled=false;if(tts.ok)speechSynthesis.cancel();};
+  audio.ontimeupdate=()=>{if(loop&&b!=null&&audio.currentTime>=b)audio.currentTime=a;};
+  audio.onended=()=>{if(loop&&b!=null){audio.currentTime=a;audio.play().catch(()=>{});}};
+  audio.onerror=()=>{status.textContent='这个文件无法播放，请换成 MP3、M4A 或 WAV。';[markA,markB,play,clear,check,rate].forEach(x=>x.disabled=true);};
+  input.onchange=()=>{
+    const file=input.files[0];if(!file)return;stopAll();if(songURL)URL.revokeObjectURL(songURL);
+    songURL=URL.createObjectURL(file);songAudio=audio;audio.src=songURL;a=0;b=null;loop=false;check.checked=false;rate.value='1';show();
+    status.textContent=`已选择：${file.name} · 仅本地播放`;
+    audio.onloadedmetadata=()=>{[markA,markB,play,clear,check,rate].forEach(x=>x.disabled=false);};
+  };
+  controls.append(markA,markB,play,clear,loopLabel,rate);local.append(input,status,audio,controls,region);box.append(local);return box;
+}
+function songLesson(cur){
+  const course=cur.lesson,p=songProgress(cur.id),box=el('section',{class:'panel song-course','aria-label':'逐句课程'});
+  box.append(el('h3',{},'02 / 一句一句学'),el('p',{class:'small muted'},esc(course.source)));
+  const progress=el('p',{class:'small',role:'status'}), meter=el('progress',{max:course.lines.length,value:(p.learned||[]).length,'aria-label':'逐句学习进度',style:'width:100%'});
+  const refresh=()=>{progress.textContent=`已标记学过 ${p.learned.length} / ${course.lines.length} 句 · 检测答对 ${Object.values(p.qs).filter(Boolean).length} / ${course.quiz.length} 题`;meter.value=p.learned.length;};refresh();box.append(progress,meter);
+  let idx=Math.max(0,Math.min(course.lines.length-1,lsGet('n2songLine:'+cur.id,0)||0));
+  const nav=el('div',{class:'row'}),prev=el('button',{class:'btn small'},'← 上一句'),next=el('button',{class:'btn small'},'下一句 →'),pick=el('select',{'aria-label':'选择歌词句子',style:'max-width:100%;flex:1;min-width:160px'});
+  course.lines.forEach((line,i)=>pick.append(el('option',{value:i},esc(`${i+1}. ${plain(line.jp)}`))));
+  const card=el('div',{'aria-live':'polite'});
+  function draw(){
+    stopSongAudio();if(tts.ok)speechSynthesis.cancel();lsSet('n2songLine:'+cur.id,idx);pick.value=idx;prev.disabled=idx===0;next.disabled=idx===course.lines.length-1;
+    const line=course.lines[idx];card.replaceChildren();
+    card.append(el('p',{class:'eyebrow'},`第 ${idx+1} 句 / ${course.lines.length}`),el('p',{class:'ja song-line',style:'font-size:clamp(22px,4vw,34px);line-height:2.3;margin:12px 0;overflow-wrap:anywhere'},rb(line.jp)));
+    const say=el('button',{class:'btn small'},'听日语朗读示范'), meaning=el('details',{class:'song-meaning'});
+    say.onclick=()=>{stopSongAudio();speak(plain(line.jp));};
+    meaning.append(el('summary',{},'先猜意思，再展开讲解'),el('p',{},`<b>${esc(line.zh)}</b>`),el('p',{},`<b>拆开看：</b>${esc(line.chunks)}`),el('p',{},`<b>语法与上下文：</b>${esc(line.grammar)}`),el('p',{class:'tip'},esc(line.practice)));
+    const learned=el('button',{class:'btn'+(p.learned.includes(idx)?' pri':'')},p.learned.includes(idx)?'✓ 已学过 · 点击取消':'我能解释这句了 · 标记学过');
+    learned.onclick=()=>{if(p.learned.includes(idx))p.learned=p.learned.filter(x=>x!==idx);else p.learned.push(idx);saveProgress();refresh();learned.classList.toggle('pri',p.learned.includes(idx));learned.textContent=p.learned.includes(idx)?'✓ 已学过 · 点击取消':'我能解释这句了 · 标记学过';};
+    card.append(say,el('p',{class:'small muted'},'朗读使用设备日语语音，不是原唱。先听歌曲，再用朗读核对词形。'),meaning,learned);
+  }
+  prev.onclick=()=>{idx--;draw();};next.onclick=()=>{idx++;draw();};pick.onchange=()=>{idx=Number(pick.value);draw();};nav.append(prev,pick,next);box.append(nav,card);draw();
+  const test=el('details',{class:'song-test'});test.append(el('summary',{},'03 / 不看翻译，做 8 题检查理解'));
+  const quizBody=el('div');
+  function drawQuiz(){quizBody.replaceChildren();course.quiz.forEach((q,i)=>{
+    const item=el('div',{class:'song-question'}), opts=el('div',{class:'opts'});item.append(el('p',{},`<b>${i+1}. ${esc(q.q)}</b>`),opts);
+    const feedback=el('div');q.options.forEach((text,j)=>{const bt=el('button',{class:'opt'},`<span class="n">${j+1}</span><span>${esc(text)}</span>`);bt.onclick=()=>{p.choices[i]=j;p.qs[i]=j===q.answer;if(!p.qs[i])addWrong(q);saveProgress();renderSideFoot();refresh();drawQuiz();};if(i in p.choices){bt.disabled=true;if(j===q.answer)bt.classList.add('right');else if(j===p.choices[i])bt.classList.add('wrong');}opts.append(bt);});
+    if(i in p.choices){feedback.append(expBox(q,p.choices[i]));const again=el('button',{class:'btn small'},'重做这题');again.onclick=()=>{delete p.choices[i];delete p.qs[i];saveProgress();refresh();drawQuiz();};feedback.append(again);}item.append(feedback);quizBody.append(item);
+  });}
+  drawQuiz();test.append(quizBody);box.append(test);return box;
+}
 function vSongs(v){
-  head(v,"日本の歌","听歌学日语 · 歌词原文在歌ネット");
-  const list=store.songs||[];
-  if(!list.length){ v.append(el("div",{class:"empty"},"还没有歌。")); return; }
-  const cur=list.find(x=>x.id===lsGet("n2song",""))||list[0];
-  if(list.length>1){ const pick=el("div",{class:"row"}); list.forEach(sg=>{ const b=el("button",{class:"btn small"+(sg===cur?" pri":"")},`${plain(sg.title)}`); b.onclick=()=>{ lsSet("n2song",sg.id); rerender(); }; pick.append(b); }); v.append(pick); }
-  v.append(voiceControls({speech:false}));
-  const q=encodeURIComponent(cur.search||plain(cur.title));
-  const top=el("div",{class:"panel",style:"display:grid;gap:10px"});
-  top.innerHTML=`<div class="row" style="justify-content:space-between;align-items:baseline"><h3 style="font-size:24px">${rb(cur.title)}</h3><span class="small muted">${esc(cur.artist)} · ${esc(cur.year||"")} · ${esc(cur.level||"")}</span></div>
-  <p class="small muted" style="margin:0;max-width:70ch">${esc(cur.about||"")}</p>
-  <div class="row">
-    <a class="btn pri small" style="text-decoration:none" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">▶ YouTube</a>
-    <a class="btn small" style="text-decoration:none" href="https://music.apple.com/jp/search?term=${q}" target="_blank" rel="noopener">Apple Music</a>
-    <a class="btn small" style="text-decoration:none" href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener">Spotify</a>
-    <a class="btn small" style="text-decoration:none" href="https://www.uta-net.com/search/?Keyword=${encodeURIComponent(plain(cur.title))}&Aselect=2&Bselect=3" target="_blank" rel="noopener">歌词（歌ネット）</a>
-  </div>
-  <p class="tip" style="margin:0"><b>怎么听：</b>${(cur.tips||[]).map(esc).join(" → ")}</p>`;
-  v.append(top);
-  const g=el("div",{class:"songsecs"});
-  cur.sections.forEach(sec=>{ const row=el("div",{class:"songsec"});
-    row.innerHTML=`<div class="ss-l"><div class="eyebrow">${rb(sec.h)}</div><p style="margin:6px 0 0">${esc(sec.sum)}</p></div>
-    <div class="ss-r">${sec.words.map(w=>`<div class="sw"><b class="ja" style="font-size:16px;line-height:2">${rb(w.w)}</b><span>${rb(w.zh)}</span></div>`).join("")}</div>`;
-    g.append(row); });
-  v.append(g);
-  if((cur.grammar||[]).length) v.append(el("div",{class:"explain"},`<b>这首歌里的语法</b><ul class="notes">${cur.grammar.map(x=>`<li>${rb(x)}</li>`).join("")}</ul>`));
-  if(cur.note) v.append(el("p",{class:"tip",style:"margin:0"},esc(cur.note)));
-  v.append(el("p",{class:"small muted",style:"margin:0"},"歌词和音乐有版权，所以这里不收录原文、不放音频，请在官方渠道播放、在歌ネット看歌词。"));
+  stopSongAudio();if(songURL){URL.revokeObjectURL(songURL);songURL=null;}songAudio=null;
+  head(v,'日本の歌','听原声 → 逐句理解 → 跟读 → 检测');
+  const list=store.songs||[];if(!list.length){v.append(el('div',{class:'empty'},'还没有歌。'));return;}
+  const cur=list.find(x=>x.id===lsGet('n2song',''))||list[0],pick=el('div',{class:'row'});
+  list.forEach(sg=>{const b=el('button',{class:'btn small'+(sg===cur?' pri':'')},esc(plain(sg.title)));b.onclick=()=>{stopAll();lsSet('n2song',sg.id);rerender();};pick.append(b);});v.append(pick);
+  v.append(el('div',{class:'panel'},`<h3 style="font-size:24px">${rb(cur.title)}</h3><p class="small muted">${esc(cur.artist)} · ${esc(cur.year)} · ${esc(cur.level)}</p><p>${esc(cur.about)}</p><p class="tip">每次学 4 句，用 15～20 分钟。先听，自己猜，再展开讲解；能用自己的话解释后再标记。第二天先复习，再学新句。</p>`));
+  v.append(songPlayer(cur),voiceControls({speech:true}));
+  if(cur.lesson)v.append(songLesson(cur));else v.append(el('p',{class:'tip'},'这首歌已有官方播放器和段落讲解；逐句课目前先完成《世界に一つだけの花》。'));
+  const extra=el('details',{class:'panel'});extra.append(el('summary',{},'段落词汇与语法拓展'));
+  const g=el('div',{class:'songsecs'});cur.sections.forEach(sec=>g.append(el('div',{class:'songsec'},`<div class="ss-l"><div class="eyebrow">${rb(sec.h)}</div><p>${esc(sec.sum)}</p></div><div class="ss-r">${sec.words.map(w=>`<div class="sw"><b class="ja">${rb(w.w)}</b><span>${rb(w.zh)}</span></div>`).join('')}</div>`)));extra.append(g);
+  if(cur.grammar?.length)extra.append(el('div',{class:'explain'},`<b>语法拓展</b><ul class="notes">${cur.grammar.map(x=>`<li>${rb(x)}</li>`).join('')}</ul>`));v.append(extra);
+  v.append(el('p',{class:'small muted'},'逐句课依据你提供的歌词段落编写；歌曲使用官方播放器，不在本站存放原唱录音。学习标记与测验结果会进入学习记录备份，本地音频不会。'));
 }
 
 /* --- 錯題本 --- */

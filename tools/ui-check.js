@@ -34,3 +34,22 @@ assert.deepEqual(result(`(()=>{
 })()`), [50,[0,1],{r:true,q:false},{q:1},{0:3},2], 'Import must union progress and wrong questions, not double-count time');
 
 console.log('UI syntax + 3 progress regression checks passed.');
+
+const songs=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'..','songs/index.json'),'utf8'));
+const course=songs[0].lesson;
+assert.equal(course.lines.length,32);
+assert.equal(course.quiz.length,8);
+for (const line of course.lines){
+ for (const k of ['jp','zh','chunks','grammar','practice'])assert.ok(line[k]);
+ assert.equal(/[一-鿿々]/.test(line.jp.replace(/\{[^{}]+\}/g,'')),false,'Every lyric kanji needs a reading');
+ assert.equal((line.jp.match(/{/g)||[]).length,(line.jp.match(/}/g)||[]).length);
+}
+for(const q of course.quiz)assert.ok(Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.options.length&&q.explain);
+for(const song of songs)assert.match(song.media.youtube,/^[A-Za-z0-9_-]{11}$/);
+assert.deepEqual(result(`(()=>{
+ const a={songs:{flower:{learned:[0,1],qs:{0:true},choices:{0:0}}}};
+ const b={songs:{flower:{learned:[1,2],qs:{1:false},choices:{1:2}}}};
+ const p=mergeProgress(a,b);
+ return [p.songs.flower.learned,p.songs.flower.qs,p.songs.flower.choices,mergeProgress(JSON.parse(JSON.stringify(p))).songs.flower.learned];
+})()`),[[0,1,2],{1:false,0:true},{1:2,0:0},[0,1,2]],'Song progress must survive backup/import merging independently of daily materials');
+console.log('32 lyric annotations, 8 quiz items, official media IDs and song backup regression passed.');
