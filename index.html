@@ -306,7 +306,33 @@ function clipOf(key){ const m=store.audio[currentId]; return key&&m&&m.clips&&m.
 const audioDiag={state:"",last:""}; function diag(k,v){ audioDiag[k]=v; const d=$("#audioDiag"); if(d) d.textContent=`音频：${audioDiag.state}${audioDiag.last?" · "+audioDiag.last:""}`; }
 const dayReady={};
 function dayEl(file){ return dayAudio[file] ||= fetch(file).then(r=>{ if(!r.ok) throw new Error("下载失败 "+r.status); return r.blob(); }).then(b=>{ diag("state",`已下载 ${(b.size/1048576).toFixed(1)}MB`); return (dayReady[file]=Object.assign(new Audio(URL.createObjectURL(b)),{preload:"auto"})); }).catch(e=>{ diag("state",String(e&&e.message||e)); throw e; }); }
+/* 首选 Web Audio：整天的配音解码进内存，按起止秒数精确切出这一句来播（iPhone 上 <audio> 跳转不可靠） */
+let AC=null; const dayBufP={}, dayBuf={};
+function ac(){ try{ if(!AC){ const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; AC=new C();
+    try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){} /* iPhone 静音开关打开时也出声 */ }
+  if(AC.state==="suspended") AC.resume(); return AC; }catch(e){ return null; } }
+function dayDecoded(file){ return dayBufP[file] ||= fetch(file).then(r=>{ if(!r.ok) throw new Error("下载失败 "+r.status); return r.arrayBuffer(); })
+  .then(buf=>new Promise((res,rej)=>{ const ctx=AC||ac(); if(!ctx) return rej(new Error("no AudioContext")); ctx.decodeAudioData(buf,res,rej); }))
+  .then(b=>{ dayBuf[file]=b; diag("state",`已解码 ${Math.round(b.duration/60)} 分钟`); return b; })
+  .catch(e=>{ delete dayBufP[file]; diag("state","解码失败："+(e&&e.message||e)); throw e; }); }
+function playWA(ctx,buf,c,rate,onend){
+  const src=ctx.createBufferSource(); src.buffer=buf; src.playbackRate.value=rate; src.connect(ctx.destination);
+  let stopped=false; src.onended=()=>{ if(stopped) return; stopped=true; clipStop=null; onend&&onend(); };
+  clipStop=()=>{ stopped=true; try{ src.stop(); }catch(e){} };
+  const lead=Math.min(0.1,c.span[0]); /* 提前 0.1 秒开始，句首不会被吃掉（句子之间有 0.45 秒空白） */
+  src.start(0,c.span[0]-lead,Math.max(0.05,c.span[1]-c.span[0]+lead)); diag("last","VOICEVOX 播放中（Web Audio）");
+}
 function playClip(c,rate,onend,fallback){
+  const ctx=ac(); /* 必须在点击的同一时刻创建/恢复 AudioContext */
+  if(ctx){
+    if(dayBuf[c.file]) return playWA(ctx,dayBuf[c.file],c,rate,onend);
+    let cancelled=false; clipStop=()=>{ cancelled=true; };
+    dayDecoded(c.file).then(b=>{ if(!cancelled) playWA(ctx,b,c,rate,onend); }).catch(()=>{ if(!cancelled){ clipStop=null; playClipEl(c,rate,onend,fallback); } });
+    return;
+  }
+  playClipEl(c,rate,onend,fallback);
+}
+function playClipEl(c,rate,onend,fallback){
   /* 已经下载好就在点击的同一时刻直接播（iPhone 只允许“点了马上播”），没下载好才等 */
   if(dayReady[c.file]) return runClip(dayReady[c.file],c,rate,onend,fallback);
   let cancelled=false; clipStop=()=>{ cancelled=true; };
@@ -327,7 +353,7 @@ function runClip(a,c,rate,onend,fallback){
   a.onended=finish; a.onerror=()=>{ diag("last","音频出错 code "+(a.error&&a.error.code)); if(!done){ done=true; clipStop=null; fallback(); } };
   start(); /* 不等 loadedmetadata：iPhone 在 play() 之前不加载音频，等它会永远等不到 */
 }
-async function ensureAudio(id){ if(!id||id in store.audio) return; store.audio[id]=null; try{ const r=await fetch(`audio/${id}/index.json`); if(r.ok){ const m=await r.json(); store.audio[id]=m; if(m.file) dayEl(`audio/${id}/${m.file}`).catch(()=>{}); if(id===currentId){if(timer.running||stopper||curAudio||game)renderSideFoot();else rerender();} } }catch(e){} }
+async function ensureAudio(id){ if(!id||id in store.audio) return; store.audio[id]=null; try{ const r=await fetch(`audio/${id}/index.json`); if(r.ok){ const m=await r.json(); store.audio[id]=m; if(m.file){ const f=`audio/${id}/${m.file}`; if(window.AudioContext||window.webkitAudioContext){ if(!AC) ac(); dayDecoded(f).catch(()=>dayEl(f).catch(()=>{})); } else dayEl(f).catch(()=>{}); } if(id===currentId){if(timer.running||stopper||curAudio||game)renderSideFoot();else rerender();} } }catch(e){} }
 function ttsSpeak(text,{onend,rate}={}){ diag("last","用了本机朗读"); if(!tts.ok){toast("这个浏览器不支持语音朗读");onend&&onend();return;} const u=new SpeechSynthesisUtterance(plain(text)); u.lang="ja-JP"; if(tts.voice) u.voice=tts.voice; u.rate=rate||tts.rate; if(onend){u.onend=onend;u.onerror=onend;} speechSynthesis.speak(u); }
 function speak(text,{onend,rate,key}={}){
   stopAudio(); if(tts.ok) speechSynthesis.cancel(); markListenActivity();
