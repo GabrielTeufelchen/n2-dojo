@@ -317,12 +317,15 @@ function playClip(c,rate,onend,fallback){
 }
 function runClip(a,c,rate,onend,fallback){
   a.preservesPitch=true; a.playbackRate=rate; let raf=0, done=false;
-  const finish=()=>{ if(done) return; done=true; cancelAnimationFrame(raf); a.pause(); clipStop=null; onend&&onend(); };
+  const finish=()=>{ if(done) return; done=true; cancelAnimationFrame(raf); a.pause(); a.muted=false; clipStop=null; onend&&onend(); };
   const tick=()=>{ if(a.currentTime>=c.span[1]) finish(); else raf=requestAnimationFrame(tick); };
-  const start=()=>{ try{ a.currentTime=c.span[0]; }catch(e){} a.play().then(()=>{ diag("last","VOICEVOX 播放中"); raf=requestAnimationFrame(tick); }).catch(e=>{ diag("last","播放被拒："+(e&&e.name)); done=true; clipStop=null; if(e&&e.name==="NotAllowedError"){ toast("浏览器拦住了这次播放，再点一下就好"); onend&&onend(); } else fallback(); }); };
-  clipStop=()=>{ done=true; cancelAnimationFrame(raf); a.pause(); };
+  /* iPhone Safari：音频没开始播放前跳转会被忽略（就会从文件开头播）。先静音播放，再跳到这一句，跳好了才出声 */
+  const unmuteAt=()=>{ let ok=false; const go=()=>{ if(ok||done) return; ok=true; a.muted=false; raf=requestAnimationFrame(tick); };
+    a.addEventListener("seeked",go,{once:true}); try{ a.currentTime=c.span[0]; }catch(e){} setTimeout(()=>{ if(Math.abs(a.currentTime-c.span[0])<0.3) go(); },250); };
+  const start=()=>{ a.muted=true; try{ a.currentTime=c.span[0]; }catch(e){} a.play().then(()=>{ diag("last","VOICEVOX 播放中"); unmuteAt(); }).catch(e=>{ a.muted=false; diag("last","播放被拒："+(e&&e.name)); done=true; clipStop=null; if(e&&e.name==="NotAllowedError"){ toast("浏览器拦住了这次播放，再点一下就好"); onend&&onend(); } else fallback(); }); };
+  clipStop=()=>{ done=true; cancelAnimationFrame(raf); a.pause(); a.muted=false; };
   a.onended=finish; a.onerror=()=>{ diag("last","音频出错 code "+(a.error&&a.error.code)); if(!done){ done=true; clipStop=null; fallback(); } };
-  if(a.readyState>=1) start(); else a.addEventListener("loadedmetadata",start,{once:true});
+  start(); /* 不等 loadedmetadata：iPhone 在 play() 之前不加载音频，等它会永远等不到 */
 }
 async function ensureAudio(id){ if(!id||id in store.audio) return; store.audio[id]=null; try{ const r=await fetch(`audio/${id}/index.json`); if(r.ok){ const m=await r.json(); store.audio[id]=m; if(m.file) dayEl(`audio/${id}/${m.file}`).catch(()=>{}); if(id===currentId){if(timer.running||stopper||curAudio||game)renderSideFoot();else rerender();} } }catch(e){} }
 function ttsSpeak(text,{onend,rate}={}){ diag("last","用了本机朗读"); if(!tts.ok){toast("这个浏览器不支持语音朗读");onend&&onend();return;} const u=new SpeechSynthesisUtterance(plain(text)); u.lang="ja-JP"; if(tts.voice) u.voice=tts.voice; u.rate=rate||tts.rate; if(onend){u.onend=onend;u.onerror=onend;} speechSynthesis.speak(u); }
