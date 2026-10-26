@@ -24,6 +24,16 @@ const context=vm.createContext({songs});vm.runInContext(helper,context);
 assert.equal(vm.runInContext("chooseDailySong(songs,'2026-10-25').id",context),'sekai-ni-hitotsu');
 assert.equal(vm.runInContext("chooseDailySong(songs,'2026-10-26').id",context),'lemon');
 assert.equal(vm.runInContext("chooseDailySong(songs,'2026-10-27').id",context),'hatsukoi');
-assert.equal(vm.runInContext("chooseDailySong(songs,'2026-10-24')",context),null);
+assert.equal(vm.runInContext("chooseDailySong(songs,'2026-10-19')",context),null);
 assert.ok(vm.runInContext("chooseDailySong(songs,'2099-01-01').date <= '2099-01-01'",context));
 console.log(`${songs.length} dated song courses validated; date selection and missing-date fallback passed.`);
+
+const packDates=JSON.parse(fs.readFileSync(path.join(root,'packs/index.json'),'utf8'));
+const missing=packDates.filter(date=>!dates.has(date));
+assert.deepEqual(missing,[],`Every material date must have a song, including prepared future packs: ${missing.join(', ')}`);
+assert.equal(new Set(songs.map(s=>s.media.youtube)).size,songs.length,'Reusing one video for multiple dates does not count as distinct songs');
+for(const date of packDates){
+ context.targetDate=date;
+ assert.equal(vm.runInContext('chooseDailySong(songs,targetDate).date',context),date,'Each material day must select its own song');
+}
+console.log(`${packDates.length} material dates covered by ${songs.length} distinct songs; no missing dates.`);
