@@ -875,17 +875,17 @@ function songPlayer(cur){
 }
 function songLesson(cur){
   const course=cur.lesson,p=songProgress(cur.id),box=el('section',{class:'panel song-course','aria-label':'逐句课程'});
-  box.append(el('h3',{},'02 / 一句一句学'),el('p',{class:'small muted'},esc(course.source)));
+  box.append(el('h3',{},course.kind==='transfer'?'02 / 听懂以后，学会运用':'02 / 一句一句学'),el('p',{class:'small muted'},esc(course.source)));
   const progress=el('p',{class:'small',role:'status'}), meter=el('progress',{max:course.lines.length,value:(p.learned||[]).length,'aria-label':'逐句学习进度',style:'width:100%'});
   const refresh=()=>{progress.textContent=`已标记学过 ${p.learned.length} / ${course.lines.length} 句 · 检测答对 ${Object.values(p.qs).filter(Boolean).length} / ${course.quiz.length} 题`;meter.value=p.learned.length;};refresh();box.append(progress,meter);
   let idx=Math.max(0,Math.min(course.lines.length-1,lsGet('n2songLine:'+cur.id,0)||0));
-  const nav=el('div',{class:'row'}),prev=el('button',{class:'btn small'},'← 上一句'),next=el('button',{class:'btn small'},'下一句 →'),pick=el('select',{'aria-label':'选择歌词句子',style:'max-width:100%;flex:1;min-width:160px'});
+  const nav=el('div',{class:'row'}),prev=el('button',{class:'btn small'},'← 上一句'),next=el('button',{class:'btn small'},'下一句 →'),pick=el('select',{'aria-label':'选择学习句子',style:'max-width:100%;flex:1;min-width:160px'});
   course.lines.forEach((line,i)=>pick.append(el('option',{value:i},esc(`${i+1}. ${plain(line.jp)}`))));
   const card=el('div',{'aria-live':'polite'});
   function draw(){
     stopSongAudio();if(tts.ok)speechSynthesis.cancel();lsSet('n2songLine:'+cur.id,idx);pick.value=idx;prev.disabled=idx===0;next.disabled=idx===course.lines.length-1;
     const line=course.lines[idx];card.replaceChildren();
-    card.append(el('p',{class:'eyebrow'},`第 ${idx+1} 句 / ${course.lines.length}`),el('p',{class:'ja song-line',style:'font-size:clamp(22px,4vw,34px);line-height:2.3;margin:12px 0;overflow-wrap:anywhere'},rb(line.jp)));
+    card.append(el('p',{class:'eyebrow'},`${course.kind==='transfer'?'原创练习 · ':''}第 ${idx+1} 句 / ${course.lines.length}`),el('p',{class:'ja song-line',style:'font-size:clamp(22px,4vw,34px);line-height:2.3;margin:12px 0;overflow-wrap:anywhere'},rb(line.jp)));
     const say=el('button',{class:'btn small'},'听日语朗读示范'), meaning=el('details',{class:'song-meaning'});
     say.onclick=()=>{stopSongAudio();speak(plain(line.jp));};
     meaning.append(el('summary',{},'先猜意思，再展开讲解'),el('p',{},`<b>${esc(line.zh)}</b>`),el('p',{},`<b>拆开看：</b>${esc(line.chunks)}`),el('p',{},`<b>语法与上下文：</b>${esc(line.grammar)}`),el('p',{class:'tip'},esc(line.practice)));
@@ -894,7 +894,7 @@ function songLesson(cur){
     card.append(say,el('p',{class:'small muted'},'朗读使用设备日语语音，不是原唱。先听歌曲，再用朗读核对词形。'),meaning,learned);
   }
   prev.onclick=()=>{idx--;draw();};next.onclick=()=>{idx++;draw();};pick.onchange=()=>{idx=Number(pick.value);draw();};nav.append(prev,pick,next);box.append(nav,card);draw();
-  const test=el('details',{class:'song-test'});test.append(el('summary',{},'03 / 不看翻译，做 8 题检查理解'));
+  const test=el('details',{class:'song-test'});test.append(el('summary',{},`03 / 不看翻译，做 ${course.quiz.length} 题检查理解`));
   const quizBody=el('div');
   function drawQuiz(){quizBody.replaceChildren();course.quiz.forEach((q,i)=>{
     const item=el('div',{class:'song-question'}), opts=el('div',{class:'opts'});item.append(el('p',{},`<b>${i+1}. ${esc(q.q)}</b>`),opts);
@@ -903,19 +903,34 @@ function songLesson(cur){
   });}
   drawQuiz();test.append(quizBody);box.append(test);return box;
 }
+/* Daily song selection: use the requested date, never silently substitute a future lesson. */
+function chooseDailySong(list,date){
+  return list.find(x=>x.date===date)||list.filter(x=>x.date&&x.date<=date).sort((a,b)=>b.date.localeCompare(a.date))[0]||null;
+}
 function vSongs(v){
   stopSongAudio();if(songURL){URL.revokeObjectURL(songURL);songURL=null;}songAudio=null;
-  head(v,'日本の歌','听原声 → 逐句理解 → 跟读 → 检测');
-  const list=store.songs||[];if(!list.length){v.append(el('div',{class:'empty'},'还没有歌。'));return;}
-  const cur=list.find(x=>x.id===lsGet('n2song',''))||list[0],pick=el('div',{class:'row'});
-  list.forEach(sg=>{const b=el('button',{class:'btn small'+(sg===cur?' pri':'')},esc(plain(sg.title)));b.onclick=()=>{stopAll();lsSet('n2song',sg.id);rerender();};pick.append(b);});v.append(pick);
-  v.append(el('div',{class:'panel'},`<h3 style="font-size:24px">${rb(cur.title)}</h3><p class="small muted">${esc(cur.artist)} · ${esc(cur.year)} · ${esc(cur.level)}</p><p>${esc(cur.about)}</p><p class="tip">每次学 4 句，用 15～20 分钟。先听，自己猜，再展开讲解；能用自己的话解释后再标记。第二天先复习，再学新句。</p>`));
+  head(v,'每日一首 · 日本の歌','一首歌，15～20 分钟 · 听辨 → 理解 → 运用 → 检测');
+  const list=store.songs||[], date=currentId||TODAY, daily=chooseDailySong(list,date);
+  if(!list.length){v.append(el('div',{class:'empty'},'歌曲课还在准备中。'));return;}
+  const cur=list.find(x=>x.id===lsGet('n2songFor:'+date,''))||daily;
+  const pick=el('div',{class:'panel',style:'display:grid;gap:10px'});
+  pick.append(el('div',{class:'eyebrow'},`${esc(date)} · ${date===TODAY?'今日歌曲课':'所选日期的歌曲课'}`));
+  const select=el('select',{'aria-label':'每日歌曲与往期课程',style:'max-width:100%;width:100%;padding:10px;font:inherit;border-radius:8px'});
+  select.append(el('option',{value:''},daily?.date===date?`当天推荐 · ${plain(daily.title)}`:'当天歌曲尚未发布'));
+  list.filter(x=>x.date&&x.lesson).sort((a,b)=>b.date.localeCompare(a.date)).forEach(sg=>select.append(el('option',{value:sg.id},esc(`${sg.date}${sg.date>TODAY?' · 预习':''} · ${plain(sg.title)} · ${sg.artist}`))));
+  select.value=lsGet('n2songFor:'+date,'');select.onchange=()=>{stopAll();lsSet('n2songFor:'+date,select.value);rerender();};pick.append(select);
+  pick.append(el('p',{class:'small muted'},'每天一首不同的歌。默认跟随顶部教材日期，也可以在这里回看往期或预习已准备的课程。'));
+  v.append(pick);
+  if(!cur){v.append(el('div',{class:'empty'},'这一天还没有歌曲课，请在上面选择已发布的课程。'));return;}
+  if(cur.date!==date)v.append(el('p',{class:'tip'},`正在${cur.date>date?'预习':'回看'} ${esc(cur.date)} 的歌曲课${daily?.date!==date?'；所选日期的新课尚未发布':''}。`));
+  v.append(el('div',{class:'panel'},`<div class="eyebrow">${esc(cur.date||'歌曲课')} · ${cur.date===date?'当日歌曲':'歌曲档案'}</div><h3 style="font-size:24px">${rb(cur.title)}</h3><p class="small muted">${esc(cur.artist)} · ${esc(cur.year)} · ${esc(cur.level)}</p><p>${esc(cur.about)}</p><b>今天学会这几件事</b><ul class="notes">${(cur.goals||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="tip">先用 5 分钟听，再用 10 分钟理解和练习，最后做检测。歌曲课包含在每天 2 小时的 N2 计划内；答错的知识点进入错题本继续复习。</p>`));
   v.append(songPlayer(cur),voiceControls({speech:true}));
-  if(cur.lesson)v.append(songLesson(cur));else v.append(el('p',{class:'tip'},'这首歌已有官方播放器和段落讲解；逐句课目前先完成《世界に一つだけの花》。'));
+  if(cur.listeningTasks?.length)v.append(el('div',{class:'panel'},`<h3>带着任务听三遍</h3><ol class="notes">${cur.listeningTasks.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`));
+  if(cur.lesson)v.append(songLesson(cur));
   const extra=el('details',{class:'panel'});extra.append(el('summary',{},'段落词汇与语法拓展'));
   const g=el('div',{class:'songsecs'});cur.sections.forEach(sec=>g.append(el('div',{class:'songsec'},`<div class="ss-l"><div class="eyebrow">${rb(sec.h)}</div><p>${esc(sec.sum)}</p></div><div class="ss-r">${sec.words.map(w=>`<div class="sw"><b class="ja">${rb(w.w)}</b><span>${rb(w.zh)}</span></div>`).join('')}</div>`)));extra.append(g);
   if(cur.grammar?.length)extra.append(el('div',{class:'explain'},`<b>语法拓展</b><ul class="notes">${cur.grammar.map(x=>`<li>${rb(x)}</li>`).join('')}</ul>`));v.append(extra);
-  v.append(el('p',{class:'small muted'},'逐句课依据你提供的歌词段落编写；歌曲使用官方播放器，不在本站存放原唱录音。学习标记与测验结果会进入学习记录备份，本地音频不会。'));
+  v.append(el('p',{class:'small muted'},'歌词课依据你提供的段落编写；标注为原创的练习句不是歌词。歌曲使用官方播放器，不在本站存放原唱录音。学习标记与测验结果会进入学习记录备份，本地音频不会。'));
 }
 
 /* --- 錯題本 --- */
