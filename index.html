@@ -874,16 +874,16 @@ function songPlayer(cur){
   controls.append(markA,markB,play,clear,loopLabel,rate);local.append(input,status,audio,controls,region);box.append(local);return box;
 }
 function songLesson(cur){
-  const course=cur.lesson,p=songProgress(cur.id),box=el('section',{class:'panel song-course','aria-label':'逐句课程'});
+  const course=cur.lesson,progressId=course.progressId||cur.id,p=songProgress(progressId),box=el('section',{class:'panel song-course','aria-label':'逐句课程'});
   box.append(el('h3',{},course.kind==='transfer'?'02 / 听懂以后，学会运用':'02 / 一句一句学'),el('p',{class:'small muted'},esc(course.source)));
   const progress=el('p',{class:'small',role:'status'}), meter=el('progress',{max:course.lines.length,value:(p.learned||[]).length,'aria-label':'逐句学习进度',style:'width:100%'});
   const refresh=()=>{progress.textContent=`已标记学过 ${p.learned.length} / ${course.lines.length} 句 · 检测答对 ${Object.values(p.qs).filter(Boolean).length} / ${course.quiz.length} 题`;meter.value=p.learned.length;};refresh();box.append(progress,meter);
-  let idx=Math.max(0,Math.min(course.lines.length-1,lsGet('n2songLine:'+cur.id,0)||0));
+  let idx=Math.max(0,Math.min(course.lines.length-1,lsGet('n2songLine:'+progressId,0)||0));
   const nav=el('div',{class:'row'}),prev=el('button',{class:'btn small'},'← 上一句'),next=el('button',{class:'btn small'},'下一句 →'),pick=el('select',{'aria-label':'选择学习句子',style:'max-width:100%;flex:1;min-width:160px'});
   course.lines.forEach((line,i)=>pick.append(el('option',{value:i},esc(`${i+1}. ${plain(line.jp)}`))));
   const card=el('div',{'aria-live':'polite'});
   function draw(){
-    stopSongAudio();if(tts.ok)speechSynthesis.cancel();lsSet('n2songLine:'+cur.id,idx);pick.value=idx;prev.disabled=idx===0;next.disabled=idx===course.lines.length-1;
+    stopSongAudio();if(tts.ok)speechSynthesis.cancel();lsSet('n2songLine:'+progressId,idx);pick.value=idx;prev.disabled=idx===0;next.disabled=idx===course.lines.length-1;
     const line=course.lines[idx];card.replaceChildren();
     card.append(el('p',{class:'eyebrow'},`${course.kind==='transfer'?'原创练习 · ':''}第 ${idx+1} 句 / ${course.lines.length}`),el('p',{class:'ja song-line',style:'font-size:clamp(22px,4vw,34px);line-height:2.3;margin:12px 0;overflow-wrap:anywhere'},rb(line.jp)));
     const say=el('button',{class:'btn small'},'听日语朗读示范'), meaning=el('details',{class:'song-meaning'});
@@ -929,6 +929,7 @@ function vSongs(v){
   v.append(songPlayer(cur),voiceControls({speech:true}));
   if(cur.listeningTasks?.length)v.append(el('div',{class:'panel'},`<h3>带着任务听三遍</h3><ol class="notes">${cur.listeningTasks.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`));
   if(cur.lesson)v.append(songLesson(cur));
+  if(cur.transferLesson){const old=el('details',{class:'panel'});old.append(el('summary',{},'附加：原有迁移练习与学习记录'));let loaded=false;old.ontoggle=()=>{if(old.open&&!loaded){old.append(songLesson({...cur,lesson:cur.transferLesson}));loaded=true;}};v.append(old);}
   const extra=el('details',{class:'panel'});extra.append(el('summary',{},'段落词汇与语法拓展'));
   const g=el('div',{class:'songsecs'});cur.sections.forEach(sec=>g.append(el('div',{class:'songsec'},`<div class="ss-l"><div class="eyebrow">${rb(sec.h)}</div><p>${esc(sec.sum)}</p></div><div class="ss-r">${sec.words.map(w=>`<div class="sw"><b class="ja">${rb(w.w)}</b><span>${rb(w.zh)}</span></div>`).join('')}</div>`)));extra.append(g);
   if(cur.grammar?.length)extra.append(el('div',{class:'explain'},`<b>语法拓展</b><ul class="notes">${cur.grammar.map(x=>`<li>${rb(x)}</li>`).join('')}</ul>`));v.append(extra);
