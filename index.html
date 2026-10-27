@@ -414,7 +414,7 @@ function mergeProgress(a={},b={}){
   const mergeMap=(x={},y={})=>Object.fromEntries([...new Set([...Object.keys(y),...Object.keys(x)])].map(k=>[k,mergeRecord(x[k],y[k])]));
   const wrong=new Map();
   for(const q of [...(a.wrong||[]),...(b.wrong||[])]) if(!wrong.has(qid(q))) wrong.set(qid(q),q);
-  return {version:2,days:mergeMap(a.days,b.days),materials:mergeMap(a.materials,b.materials),songs:mergeMap(a.songs,b.songs),wrong:[...wrong.values()].slice(0,300),arena:{...(b.arena||{}),...(a.arena||{})}};
+  return {version:2,days:mergeMap(a.days,b.days),materials:mergeMap(a.materials,b.materials),songs:mergeMap(a.songs,b.songs),grammarPath:mergeMap(a.grammarPath,b.grammarPath),wrong:[...wrong.values()].slice(0,300),arena:{...(b.arena||{}),...(a.arena||{})}};
 }
 function materialProgress(progress,id){
   progress.materials||={}; const x=progress.materials[id]||={};
@@ -432,6 +432,7 @@ async function loadFiles(){
   try{ const ids=await (await fetch("packs/index.json")).json();
     await Promise.all(ids.map(async id=>{ try{ store.files[id]=await (await fetch(`packs/${id}.json`)).json(); }catch(e){} })); }catch(e){}
   try{ store.songs=await (await fetch("songs/index.json",{cache:"no-store"})).json(); }catch(e){ store.songs=[]; }
+  try{const r=await fetch("grammar-path.json",{cache:"no-store"});if(r.ok)store.grammarPath=await r.json();}catch(e){}
   store.loaded=true; currentId=null; rerender();
 }
 async function initCloud(){
@@ -460,6 +461,7 @@ const pack = () => getPack(currentId);
 const TABS = [
   {id:"listen", k:"聴", t:"聴解 30分", s:"LISTENING"},
   {id:"read", k:"読", t:"読解", s:"READING"},
+  {id:"path", k:"進", t:"每日进阶", s:"DAILY GRAMMAR"},
   {id:"vocab", k:"語", t:"語彙・文法", s:"VOCAB & GRAMMAR"},
   {id:"speak", k:"話", t:"会話", s:"SPEAKING"},
   {id:"arena", k:"闘", t:"闘技場", s:"QUIZ ARENA"},
@@ -513,6 +515,10 @@ async function importProgress(file){
       for(const key of ["vocab","gram","shadow","learned"])if(d[key]&&!Array.isArray(d[key]))throw new Error("进度格式不正确");
       if(d.listenSec!=null&&(!Number.isFinite(d.listenSec)||d.listenSec<0))throw new Error("听力时间格式不正确");
     }}
+    if(p.grammarPath){
+      if(typeof p.grammarPath!=="object"||Array.isArray(p.grammarPath))throw new Error("进阶记录格式不正确");
+      for(const d of Object.values(p.grammarPath)){if(!d||typeof d!=="object"||Array.isArray(d))throw new Error("进阶记录格式不正确");for(const k of ["qs","choices"])if(d[k]&&(typeof d[k]!=="object"||Array.isArray(d[k])))throw new Error("进阶答题格式不正确");}
+    }
     if(p.songs&&(typeof p.songs!=="object"||Array.isArray(p.songs)))throw new Error("歌曲进度格式不正确");
     for(const d of Object.values(p.songs||{})){
       if(!d||typeof d!=="object"||!Array.isArray(d.learned)||!d.learned.every(Number.isInteger))throw new Error("歌曲学习标记格式不正确");
@@ -564,7 +570,7 @@ function rerender(){
   const v=el("section",{class:"view",id:"study-view",role:"tabpanel","aria-labelledby":"tab-"+tab});
   if(!pack()){ v.append(el("div",{class:"empty"},store.loaded?"没有找到教材文件。":"教材加载中……")); m.append(v); return; }
   m.append(el("section",{id:"studyPlan",class:"panel study-plan","aria-label":"学习进度与路线"})); renderStudyPlan();
-  ({listen:vListen,read:vRead,vocab:vVocab,speak:vSpeak,arena:vArena,culture:vCulture,adult:vAdult,songs:vSongs,wrong:vWrong})[tab](v);
+  ({path:vGrammarPath,listen:vListen,read:vRead,vocab:vVocab,speak:vSpeak,arena:vArena,culture:vCulture,adult:vAdult,songs:vSongs,wrong:vWrong})[tab](v);
   m.append(v);
 }
 function renderPackbar(){
@@ -589,8 +595,8 @@ function expBox(q,chosen){
   box.innerHTML=verdict+(q.explain?`<p>${rb(q.explain)}</p>`:"")+why+(q.point?`<div class="point"><b>要点</b>${rb(q.point)}</div>`:"");
   return box;
 }
-function qBlock(q,key,onAnswer){
-  const d=P(); const box=el("div",{class:"q"});
+function qBlock(q,key,onAnswer,record){
+  const d=record||P(); const box=el("div",{class:"q"});
   box.innerHTML=`${q.passage?passageHTML(q.passage,q.q):""}<div class="stem">${rb(q.q)}</div>${q.zh?`<div class="zh hideable">${esc(q.zh)}</div>`:""}`;
   const opts=el("div",{class:"opts"}); const slot=el("div");
   q.options.forEach((o,i)=>{ const b=el("button",{class:"opt"},`<span class="n">${i+1}</span><span>${rb(o)}</span>`);
@@ -665,6 +671,42 @@ function vRead(v){
   if(r.zh) p.append(el("div",{class:"zh hideable explain"},`<b>中文意思</b><p style="margin:0">${esc(r.zh)}</p>`));
   const qs=el("div",{class:"qs"}); r.questions.forEach((q,i)=>qs.append(qBlock(q,`R-${i}`))); p.append(qs);
   v.append(p);
+}
+
+/* Additional grammar track: separate lessons and answer state. */
+function grammarReviewIds(plan,date){
+  return (plan.reviewOffsets||[1,3,7]).map(offset=>new Date(Date.parse(date+'T00:00:00Z')-offset*864e5).toISOString().slice(0,10)).map(d=>plan.lessons.find(x=>x.date===d&&x.kind==='new')?.id).filter(Boolean);
+}
+function grammarPathProgress(id){store.progress.grammarPath||={};return store.progress.grammarPath[id]||={qs:{},choices:{},learned:[]};}
+function vGrammarPath(v){
+  head(v,'每日进阶','每天换一个重点 · D+1 / D+3 / D+7 复习');
+  const plan=store.grammarPath;
+  if(!plan?.lessons?.length){v.append(el('p',{class:'panel'},'进阶课暂时未加载，请刷新重试。'));return;}
+  const list=plan.lessons, saved=lsGet('n2grammarPathDate:'+TODAY,''), current=list.find(x=>x.date===TODAY);
+  const lesson=list.find(x=>x.date===saved)||current||list.filter(x=>x.date<=TODAY).at(-1)||list[0];
+  const top=el('div',{class:'panel'}),select=el('select',{'aria-label':'选择进阶课程',style:'width:100%;font:inherit;padding:10px;border-radius:8px'});
+  list.forEach(x=>select.append(el('option',{value:x.date},esc(`${x.date}${x.date===TODAY?' · 今日':x.date>TODAY?' · 预习':''} · ${x.title}`))));select.value=lesson.date;
+  select.onchange=()=>{lsSet('n2grammarPathDate:'+TODAY,select.value);rerender();};
+  top.append(el('p',{class:'tip'},esc(plan.timeNote)),select,el('p',{class:'small muted'},`已备好 ${list[0].date}～${list.at(-1).date} 的 ${list.length} 天课程。`));
+  if(!current&&TODAY>list.at(-1).date)top.append(el('p',{role:'status'},'今天的新课尚未发布；当前显示已发布课程。'));
+  const today=el('button',{class:'btn small'},'回到今日');today.onclick=()=>{lsSet('n2grammarPathDate:'+TODAY,'');rerender();};top.append(today);v.append(top);
+  const reviewIds=lesson.kind==='review'?lesson.reviewIds:grammarReviewIds(plan,lesson.date);
+  const route=el('div',{class:'panel'});route.append(el('h3',{},lesson.kind==='review'?'Mix · 混合复习':'Review · 间隔复习'));
+  if(!reviewIds.length)route.append(el('p',{},'第一天，从下面的新课开始。'));
+  for(const id of reviewIds){const prior=list.find(x=>x.id===id);if(!prior)continue;const b=el('button',{class:'btn small'},esc(`${prior.date.slice(5)} · ${prior.title}`));b.onclick=()=>{lsSet('n2grammarPathDate:'+TODAY,prior.date);rerender();};route.append(b);}
+  v.append(route);
+  function card(item,review=false){
+    const d=grammarPathProgress(item.id),box=el('section',{class:'panel',style:'display:grid;gap:12px'});
+    box.append(el('div',{class:'eyebrow'},esc(`${item.date} · ${review?'Review':'New'}`)),el('h3',{style:'font-size:24px'},esc(item.title)),el('p',{},esc(item.meaning)),el('div',{class:'form'},esc(item.form)),el('p',{class:'tip'},esc(item.note)));
+    item.examples.forEach(e=>box.append(el('div',{},`<p class="ja" style="font-size:22px;line-height:2">${rb(e.ja)}</p><p>${esc(e.zh)}</p>`)));
+    const score=el('p',{class:'small',role:'status'}),refresh=()=>score.textContent=`Quiz · ${item.quiz.filter((_,i)=>d.qs['X-'+item.id+'-'+i]===true).length} / ${item.quiz.length}`;refresh();box.append(score);
+    const qs=el('div',{class:'qs'});item.quiz.forEach((q,i)=>qs.append(qBlock(q,'X-'+item.id+'-'+i,refresh,d)));box.append(qs);
+    const reset=el('button',{class:'btn small'},'Retry');reset.onclick=()=>{d.qs={};d.choices={};saveProgress();rerender();};box.append(reset);return box;
+  }
+  if(lesson.kind==='new')v.append(card(lesson));
+  else for(const id of lesson.reviewIds){const item=list.find(x=>x.id===id);if(item)v.append(card(item,true));}
+  const overview=el('details',{class:'panel'});overview.append(el('summary',{},'Roadmap · 到 2027 年 7 月'));
+  plan.roadmap.forEach(stage=>overview.append(el('div',{},`<h3>${esc(stage.from)}～${esc(stage.to)} · ${esc(stage.title)}</h3><p>${esc(stage.focus)}</p>`)));v.append(overview);
 }
 
 /* --- 語彙・文法 --- */
