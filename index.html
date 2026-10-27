@@ -431,7 +431,7 @@ async function flushProgress(){ if(!store.db||!store.uid) return; if(store.savin
 async function loadFiles(){
   try{ const ids=await (await fetch("packs/index.json")).json();
     await Promise.all(ids.map(async id=>{ try{ store.files[id]=await (await fetch(`packs/${id}.json`)).json(); }catch(e){} })); }catch(e){}
-  try{ store.songs=await (await fetch("songs/index.json")).json(); }catch(e){ store.songs=[]; }
+  try{ store.songs=await (await fetch("songs/index.json",{cache:"no-store"})).json(); }catch(e){ store.songs=[]; }
   store.loaded=true; currentId=null; rerender();
 }
 async function initCloud(){
@@ -917,8 +917,8 @@ function vSongs(v){
   pick.append(el('div',{class:'eyebrow'},`${esc(date)} · ${date===TODAY?'今日歌曲课':'所选日期的歌曲课'}`));
   const select=el('select',{'aria-label':'每日歌曲与往期课程',style:'max-width:100%;width:100%;padding:10px;font:inherit;border-radius:8px'});
   select.append(el('option',{value:''},daily?.date===date?`当天推荐 · ${plain(daily.title)}`:'当天歌曲尚未发布'));
-  list.filter(x=>x.date&&x.lesson).sort((a,b)=>b.date.localeCompare(a.date)).forEach(sg=>select.append(el('option',{value:sg.id},esc(`${sg.date}${sg.supplemental?' · 补充歌词课':sg.date>TODAY?' · 预习':''} · ${plain(sg.title)} · ${sg.artist}`))));
-  select.value=lsGet('n2songFor:'+date,'');select.onchange=()=>{stopAll();lsSet('n2songFor:'+date,select.value);rerender();};pick.append(select);
+  list.filter(x=>x.date&&x.lesson&&x.id!==daily?.id).sort((a,b)=>b.date.localeCompare(a.date)).forEach(sg=>select.append(el('option',{value:sg.id},esc(`${sg.date}${sg.supplemental?' · 补充歌词课':sg.date>TODAY?' · 预习':''} · ${plain(sg.title)} · ${sg.artist}`))));
+  select.value=cur?.id===daily?.id?'':lsGet('n2songFor:'+date,'');select.onchange=()=>{stopAll();lsSet('n2songFor:'+date,select.value);rerender();};pick.append(select);
   const days=packIds(), covered=days.filter(d=>list.some(s=>!s.supplemental&&s.date===d&&s.lesson?.lines?.length&&s.lesson?.quiz?.length));
   pick.append(el('p',{class:'small',role:'status'},`教材 ${days.length} 天 · 已配 ${covered.length} 首${covered.length===days.length?' · 每天一首，已全部配齐':` · 还缺 ${days.length-covered.length} 天`}${list.some(s=>s.supplemental)?` · 另有 ${list.filter(s=>s.supplemental).length} 首补充课`:''}`));
   pick.append(el('p',{class:'small muted'},'每天一首不同的歌。默认跟随顶部教材日期，也可以在这里回看往期或预习已准备的课程。'));
