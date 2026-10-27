@@ -23,7 +23,7 @@ const helper=script.slice(script.indexOf('function chooseDailySong('),script.ind
 const context=vm.createContext({songs});vm.runInContext(helper,context);
 assert.equal(vm.runInContext("chooseDailySong(songs,'2026-10-25').id",context),'sekai-ni-hitotsu');
 assert.equal(vm.runInContext("chooseDailySong(songs,'2026-10-26').id",context),'lemon');
-assert.equal(vm.runInContext("chooseDailySong(songs,'2026-10-27').id",context),'hatsukoi');
+assert.equal(vm.runInContext("chooseDailySong(songs,'2026-10-27').id",context),'first-love');
 assert.equal(vm.runInContext("chooseDailySong(songs,'2026-10-19')",context),null);
 assert.ok(vm.runInContext("chooseDailySong(songs,'2099-01-01').date <= '2099-01-01'",context));
 console.log(`${songs.length} dated song courses validated; date selection and missing-date fallback passed.`);
@@ -39,5 +39,5 @@ for(const date of packDates){
 console.log(`${packDates.length} material dates covered by ${songs.filter(s=>!s.supplemental).length} daily songs plus ${songs.filter(s=>s.supplemental).length} supplemental courses; no missing dates.`);
 
 const firstLove=songs.find(s=>s.id==='first-love');
-assert.ok(firstLove.supplemental);assert.equal(firstLove.lesson.lines.length,31);
-context.reversedSongs=[...songs].reverse();assert.equal(vm.runInContext("chooseDailySong(reversedSongs,'2026-10-27').id",context),'hatsukoi','Supplemental lyrics must not replace the daily course, regardless of array order');
+assert.ok(!firstLove.supplemental);assert.equal(firstLove.lesson.lines.length,31);
+context.reversedSongs=[...songs].reverse();assert.equal(vm.runInContext("chooseDailySong(reversedSongs,'2026-10-27').id",context),'first-love','The complete First Love lyric course is the daily course regardless of array order');
