@@ -888,7 +888,7 @@ function songLesson(cur){
     card.append(el('p',{class:'eyebrow'},`${course.kind==='transfer'?'原创练习 · ':''}第 ${idx+1} 句 / ${course.lines.length}`),el('p',{class:'ja song-line',style:'font-size:clamp(22px,4vw,34px);line-height:2.3;margin:12px 0;overflow-wrap:anywhere'},rb(line.jp)));
     const say=el('button',{class:'btn small'},'听日语朗读示范'), meaning=el('details',{class:'song-meaning'});
     say.onclick=()=>{stopSongAudio();speak(plain(line.jp));};
-    meaning.append(el('summary',{},'先猜意思，再展开讲解'),el('p',{},`<b>${esc(line.zh)}</b>`),el('p',{},`<b>拆开看：</b>${esc(line.chunks)}`),el('p',{},`<b>语法与上下文：</b>${esc(line.grammar)}`),el('p',{class:'tip'},esc(line.practice)));
+    meaning.append(el('summary',{},'Notes'),el('p',{},`<b>${esc(line.zh)}</b>`),el('p',{},`<b>W</b> ${esc(line.chunks)}`),el('p',{},`<b>G</b> ${esc(line.grammar)}`),el('p',{class:'tip'},esc(line.practice)));
     const learned=el('button',{class:'btn'+(p.learned.includes(idx)?' pri':'')},p.learned.includes(idx)?'✓ 已学过 · 点击取消':'我能解释这句了 · 标记学过');
     learned.onclick=()=>{if(p.learned.includes(idx))p.learned=p.learned.filter(x=>x!==idx);else p.learned.push(idx);saveProgress();refresh();learned.classList.toggle('pri',p.learned.includes(idx));learned.textContent=p.learned.includes(idx)?'✓ 已学过 · 点击取消':'我能解释这句了 · 标记学过';};
     card.append(say,el('p',{class:'small muted'},'朗读使用设备日语语音，不是原唱。先听歌曲，再用朗读核对词形。'),meaning,learned);
