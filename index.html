@@ -905,7 +905,7 @@ function songLesson(cur){
 }
 /* Daily song selection: use the requested date, never silently substitute a future lesson. */
 function chooseDailySong(list,date){
-  return list.find(x=>x.date===date)||list.filter(x=>x.date&&x.date<=date).sort((a,b)=>b.date.localeCompare(a.date))[0]||null;
+  return list.find(x=>!x.supplemental&&x.date===date)||list.filter(x=>!x.supplemental&&x.date&&x.date<=date).sort((a,b)=>b.date.localeCompare(a.date))[0]||null;
 }
 function vSongs(v){
   stopSongAudio();if(songURL){URL.revokeObjectURL(songURL);songURL=null;}songAudio=null;
@@ -917,15 +917,15 @@ function vSongs(v){
   pick.append(el('div',{class:'eyebrow'},`${esc(date)} · ${date===TODAY?'今日歌曲课':'所选日期的歌曲课'}`));
   const select=el('select',{'aria-label':'每日歌曲与往期课程',style:'max-width:100%;width:100%;padding:10px;font:inherit;border-radius:8px'});
   select.append(el('option',{value:''},daily?.date===date?`当天推荐 · ${plain(daily.title)}`:'当天歌曲尚未发布'));
-  list.filter(x=>x.date&&x.lesson).sort((a,b)=>b.date.localeCompare(a.date)).forEach(sg=>select.append(el('option',{value:sg.id},esc(`${sg.date}${sg.date>TODAY?' · 预习':''} · ${plain(sg.title)} · ${sg.artist}`))));
+  list.filter(x=>x.date&&x.lesson).sort((a,b)=>b.date.localeCompare(a.date)).forEach(sg=>select.append(el('option',{value:sg.id},esc(`${sg.date}${sg.supplemental?' · 补充歌词课':sg.date>TODAY?' · 预习':''} · ${plain(sg.title)} · ${sg.artist}`))));
   select.value=lsGet('n2songFor:'+date,'');select.onchange=()=>{stopAll();lsSet('n2songFor:'+date,select.value);rerender();};pick.append(select);
-  const days=packIds(), covered=days.filter(d=>list.some(s=>s.date===d&&s.lesson?.lines?.length&&s.lesson?.quiz?.length));
-  pick.append(el('p',{class:'small',role:'status'},`教材 ${days.length} 天 · 已配 ${covered.length} 首${covered.length===days.length?' · 每天一首，已全部配齐':` · 还缺 ${days.length-covered.length} 天`}`));
+  const days=packIds(), covered=days.filter(d=>list.some(s=>!s.supplemental&&s.date===d&&s.lesson?.lines?.length&&s.lesson?.quiz?.length));
+  pick.append(el('p',{class:'small',role:'status'},`教材 ${days.length} 天 · 已配 ${covered.length} 首${covered.length===days.length?' · 每天一首，已全部配齐':` · 还缺 ${days.length-covered.length} 天`}${list.some(s=>s.supplemental)?` · 另有 ${list.filter(s=>s.supplemental).length} 首补充课`:''}`));
   pick.append(el('p',{class:'small muted'},'每天一首不同的歌。默认跟随顶部教材日期，也可以在这里回看往期或预习已准备的课程。'));
   v.append(pick);
   if(!cur){v.append(el('div',{class:'empty'},'这一天还没有歌曲课，请在上面选择已发布的课程。'));return;}
   if(cur.date!==date)v.append(el('p',{class:'tip'},`正在${cur.date>date?'预习':'回看'} ${esc(cur.date)} 的歌曲课${daily?.date!==date?'；所选日期的新课尚未发布':''}。`));
-  v.append(el('div',{class:'panel'},`<div class="eyebrow">${esc(cur.date||'歌曲课')} · ${cur.date===date?'当日歌曲':'歌曲档案'}</div><h3 style="font-size:24px">${rb(cur.title)}</h3><p class="small muted">${esc(cur.artist)} · ${esc(cur.year)} · ${esc(cur.level)}</p><p>${esc(cur.about)}</p><b>今天学会这几件事</b><ul class="notes">${(cur.goals||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="tip">先用 5 分钟听，再用 10 分钟理解和练习，最后做检测。歌曲课包含在每天 2 小时的 N2 计划内；答错的知识点进入错题本继续复习。</p>`));
+  v.append(el('div',{class:'panel'},`<div class="eyebrow">${esc(cur.date||'歌曲课')} · ${cur.supplemental?'补充歌词课':cur.date===date?'当日歌曲':'歌曲档案'}</div><h3 style="font-size:24px">${rb(cur.title)}</h3><p class="small muted">${esc(cur.artist)} · ${esc(cur.year)} · ${esc(cur.level)}</p><p>${esc(cur.about)}</p><b>今天学会这几件事</b><ul class="notes">${(cur.goals||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="tip">先用 5 分钟听，再用 10 分钟理解和练习，最后做检测。歌曲课包含在每天 2 小时的 N2 计划内；答错的知识点进入错题本继续复习。</p>`));
   v.append(songPlayer(cur),voiceControls({speech:true}));
   if(cur.listeningTasks?.length)v.append(el('div',{class:'panel'},`<h3>带着任务听三遍</h3><ol class="notes">${cur.listeningTasks.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`));
   if(cur.lesson)v.append(songLesson(cur));

@@ -3,7 +3,7 @@ const root=path.join(__dirname,'..'),songs=JSON.parse(fs.readFileSync(path.join(
 const ids=new Set(),dates=new Set();
 for(const s of songs){
  assert.ok(!ids.has(s.id),'Song IDs must be unique');ids.add(s.id);
- assert.match(s.date,/^\d{4}-\d{2}-\d{2}$/);assert.ok(!dates.has(s.date),'Only one song per date');dates.add(s.date);
+ assert.match(s.date,/^\d{4}-\d{2}-\d{2}$/);if(!s.supplemental){assert.ok(!dates.has(s.date),'Only one daily song per date');dates.add(s.date);}
  assert.ok(s.goals.length>=3);assert.match(s.media.youtube,/^[\w-]{11}$/);
  assert.ok(s.lesson.lines.length>=6);assert.ok(s.lesson.quiz.length>=6);
  if(s.lesson.kind==='transfer'){
@@ -15,7 +15,7 @@ for(const s of songs){
  }
  for(const q of s.lesson.quiz){
   assert.ok(Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.options.length&&q.explain);
-  if(s.lesson.kind==='transfer'){assert.equal(q.why.length,q.options.length);assert.ok(q.why[q.answer].startsWith('✓'));assert.ok(q.point);}
+  if(s.lesson.kind==='transfer'||s.lesson.kind==='lyrics'){assert.equal(q.why.length,q.options.length);assert.ok(q.why[q.answer].startsWith('✓'));assert.ok(q.point);}
  }
 }
 const script=fs.readFileSync(path.join(root,'index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
@@ -36,4 +36,8 @@ for(const date of packDates){
  context.targetDate=date;
  assert.equal(vm.runInContext('chooseDailySong(songs,targetDate).date',context),date,'Each material day must select its own song');
 }
-console.log(`${packDates.length} material dates covered by ${songs.length} distinct songs; no missing dates.`);
+console.log(`${packDates.length} material dates covered by ${songs.filter(s=>!s.supplemental).length} daily songs plus ${songs.filter(s=>s.supplemental).length} supplemental courses; no missing dates.`);
+
+const firstLove=songs.find(s=>s.id==='first-love');
+assert.ok(firstLove.supplemental);assert.equal(firstLove.lesson.lines.length,31);
+context.reversedSongs=[...songs].reverse();assert.equal(vm.runInContext("chooseDailySong(reversedSongs,'2026-10-27').id",context),'hatsukoi','Supplemental lyrics must not replace the daily course, regardless of array order');
