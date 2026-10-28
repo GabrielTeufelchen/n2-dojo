@@ -11,6 +11,7 @@
 2. 看上下文：`node tools/context.js $D`。里面有周主题、当天轮换的题型（rotation）、最近用过的单词（不能重复）、用过的文化题目、上一集大人の会話的最后几句。再打开前一天的 `packs/<日期>.json` 看一眼风格和难度。
 3. 写 `packs/base/$D.json`（完整一套，不另写 enrich 文件）。结构和现有的 `packs/2026-10-24.json` 完全一样，按下面的“内容要求”。写完跑 `node tools/check.js packs/base/$D.json`，有问题就改到通过。
 4. 跑 `bash tools/daily.sh $D`：检查 → 合并 → 配音（引擎没开会自己开、用完关掉）→ 生成 `audio/publish.json`。
+   - daily.sh 会跑 `node tools/audit.js $D` 列出“标注读音 vs 引擎读音”不一致的句子。逐条看：真读错的（汉字读成别的音、は 被读成 わ 等）要修。**不要**把所有“单汉字＋送假名”都改成假名送进引擎——「と{話|はな}して」会变成「とはなして」被读成「とわなして」。只把确认会读错的字加进 NAME_KANA。
    - 输出里有「读音需要核对」时逐条看：英文、数字、长音写法不同可以忽略；真读错的（比如 言って 读成 げんって）就在 `tools/voice.js` 的 `NAME_KANA`（强制用假名读）或 `TEXT_FIX` 里加规则，再跑一次 `bash tools/daily.sh $D`。
 5. 发布：
    - 先 `Artifact action=read url=https://claude.ai/artifact/EKQaCRWDmbdHj3n8uuTWLA`（定时任务是新会话，不读一次发布会被拒）。如果线上的 index.html 和本地 `index.html` 不一样，以本地为准、但要在日志里记一笔。
