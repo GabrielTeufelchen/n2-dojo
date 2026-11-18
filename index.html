@@ -592,7 +592,9 @@ function expBox(q,chosen){
   const right=chosen===q.answer, box=el("div",{class:"explain","aria-live":"polite"});
   const verdict=chosen==null?`<div class="verdict">答案 ${q.answer+1}</div>`:right?`<div class="verdict ok">✓ 正解</div>`:`<div class="verdict ng">✗ 你选了 ${chosen+1}，答案是 ${q.answer+1}</div>`;
   const why=Array.isArray(q.why)&&q.why.length===q.options.length?`<ol class="why">${q.options.map((o,i)=>{ const t=String(q.why[i]||"").replace(/^✓\s*/,""); return `<li class="${i===q.answer?"ans":i===chosen?"bad":""}"><span class="n">${i===q.answer?"✓":i+1}</span><span><span class="o">${rb(o)}</span>${t&&t!=="—"?"　"+rb(t):""}</span></li>`; }).join("")}</ol>`:"";
-  box.innerHTML=verdict+(q.explain?`<p>${rb(q.explain)}</p>`:"")+why+(q.point?`<div class="point"><b>要点</b>${rb(q.point)}</div>`:"");
+  const blank=/[（(]\s*[)）]/g;
+  const filled=q.q.match(blank)?.length===1?'<p lang="ja">'+rb(q.q.replace(blank,()=>q.options[q.answer]))+'</p>':'';
+  box.innerHTML=verdict+filled+(q.explain?`<p>${rb(q.explain)}</p>`:"")+why+(q.point?`<div class="point"><b>要点</b>${rb(q.point)}</div>`:"");
   return box;
 }
 function qBlock(q,key,onAnswer,record){
@@ -880,13 +882,22 @@ function songPlayer(cur){
   box.append(el('h3',{},'01 / 先听原声'));
   if(cur.media){
     const m=cur.media;
-    box.append(el('p',{class:'small muted'},esc(m.label)));
     const slot=el('div',{'data-song-embed':''});
-    const embed=el('button',{class:'btn small'},'重新加载页内播放器');
-    const loadPlayer=()=>{stopSongAudio();slot.replaceChildren(el('iframe',{src:`https://www.youtube-nocookie.com/embed/${m.youtube}?playsinline=1`,title:m.label,allow:'encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:12px'}));};
-    embed.onclick=loadPlayer;
-    box.append(slot,el('p',{class:'small muted'},'直接点击上方播放器里的播放键，就在本页听歌。播放器需要能连接 YouTube；若加载失败可在本页重试，或使用下方的本地音频。'),embed);
-    loadPlayer();
+    const embed=el('button',{class:'btn small'},'加载官方视频');
+    if(m.preview){
+      const sample=el('audio',{controls:'',preload:'none',src:m.preview.url,style:'width:100%','aria-label':'免登录试听'});
+      sample.onplay=()=>{if(songAudio!==sample)stopSongAudio();slot.replaceChildren();songAudio=sample;};
+      box.append(el('p',{},'免登录试听 · 原声片段'),sample,
+        el('a',{href:m.preview.source,target:'_blank',rel:'noopener',class:'small muted'},esc('Apple Music · '+m.preview.credit)));
+      sample.onerror=()=>{sample.after(el('p',{role:'status'},'试听音源未能加载，可试下方官方视频或本地音频。'));};
+    }
+    embed.onclick=()=>{
+      stopSongAudio();
+      slot.replaceChildren(el('iframe',{src:`https://www.youtube-nocookie.com/embed/${m.youtube}?playsinline=1`,title:m.label,allow:'encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:12px'}));
+      embed.textContent='重新加载官方视频';
+    };
+    box.append(el('p',{class:'small muted'},esc(m.label)),embed,slot);
+    if(!m.preview)embed.onclick();
   }
   const local=el('details',{class:'song-local'});local.append(el('summary',{},'导入自己的原唱文件 · A–B 复读'));
   local.append(el('p',{class:'small muted'},'文件只在当前浏览器内播放，不上传。刷新后需重新选择文件。A、B 由你按实际版本手动标记，不自动对应歌词。'));
@@ -903,7 +914,7 @@ function songPlayer(cur){
   clear.onclick=()=>{a=0;b=null;loop=false;check.checked=false;show();};
   check.onchange=()=>{if(check.checked&&b==null){check.checked=false;toast('请先标记 B 点');return;}loop=check.checked;};
   rate.onchange=()=>audio.playbackRate=Number(rate.value);
-  audio.onplay=()=>{box.querySelectorAll('iframe').forEach(x=>x.remove());const button=box.querySelector('button');if(cur.media&&button)button.disabled=false;if(tts.ok)speechSynthesis.cancel();};
+  audio.onplay=()=>{if(songAudio!==audio)stopSongAudio();songAudio=audio;box.querySelectorAll('iframe').forEach(x=>x.remove());const button=box.querySelector('button');if(cur.media&&button)button.disabled=false;if(tts.ok)speechSynthesis.cancel();};
   audio.ontimeupdate=()=>{if(loop&&b!=null&&audio.currentTime>=b)audio.currentTime=a;};
   audio.onended=()=>{if(loop&&b!=null){audio.currentTime=a;audio.play().catch(()=>{});}};
   audio.onerror=()=>{status.textContent='这个文件无法播放，请换成 MP3、M4A 或 WAV。';[markA,markB,play,clear,check,rate].forEach(x=>x.disabled=true);};
