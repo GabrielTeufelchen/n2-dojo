@@ -588,6 +588,16 @@ function sayable(node,text,key,opts={}){ node.classList.add("say-t"); node.setAt
 /* ================= 题目和讲解 ================= */
 /* 問題9 文章の文法：显示文章，把当前这一空标出来 */
 function passageHTML(paras,blank){ const b=esc(blank); return `<div class="passage gap">${paras.map(x=>`<p>${rb(x).split(b).join(`<mark class="blank">${b}</mark>`)}</p>`).join("")}</div>`; }
+const readingClips={'きょひ':'kyohi','きょうひ':'kyouhi','こひ':'kohi','きょび':'kyobi'};
+function playReading(kana){
+  stopAll();
+  const clip=readingClips[kana];
+  if(!clip){speak(kana,{rate:0.8});return;}
+  const audio=new Audio('readings/'+clip+'.mp3');
+  curAudio=audio;
+  audio.onended=()=>{if(curAudio===audio)curAudio=null;};
+  audio.play().catch(()=>{if(curAudio===audio)speak(kana,{rate:0.8});});
+}
 function expBox(q,chosen){
   const right=chosen===q.answer, box=el("div",{class:"explain","aria-live":"polite"});
   const verdict=chosen==null?`<div class="verdict">答案 ${q.answer+1}</div>`:right?`<div class="verdict ok">✓ 正解</div>`:`<div class="verdict ng">✗ 你选了 ${chosen+1}，答案是 ${q.answer+1}</div>`;
@@ -595,6 +605,15 @@ function expBox(q,chosen){
   const blank=/[（(]\s*[)）]/g;
   const filled=q.q.match(blank)?.length===1?'<p lang="ja">'+rb(q.q.replace(blank,()=>q.options[q.answer]))+'</p>':'';
   box.innerHTML=verdict+filled+(q.explain?`<p>${rb(q.explain)}</p>`:"")+why+(q.point?`<div class="point"><b>要点</b>${rb(q.point)}</div>`:"");
+  if(/【[^】]*[一-龯々][^】]*】/.test(q.q)&&q.options.every(o=>/^[ぁ-ゖァ-ヺー]+$/.test(o))){
+    const row=el('div',{class:'row','aria-label':'读音对比'});
+    q.options.forEach((kana,i)=>{
+      const b=el('button',{type:'button',class:'btn small'},'▶ '+esc(kana)+(i===q.answer?'（正确）':''));
+      b.onclick=()=>playReading(kana);
+      row.append(b);
+    });
+    box.querySelector('.verdict').after(row);
+  }
   return box;
 }
 function qBlock(q,key,onAnswer,record){
@@ -885,6 +904,15 @@ function songPlayer(cur){
     const slot=el('div',{'data-song-embed':''});
     const embed=el('button',{class:'btn small'},'加载官方视频');
     if(m.preview){
+      const full=el('button',{type:'button',class:'btn small'},'Apple Music · 听整首');
+      full.onclick=()=>{
+        stopSongAudio();
+        const url=new URL(m.preview.source);
+        url.hostname='embed.music.apple.com';
+        url.searchParams.delete('uo');
+        slot.replaceChildren(el('iframe',{src:url.href,title:'Apple Music · '+m.preview.credit,allow:'autoplay *; encrypted-media *; fullscreen *',style:'width:100%;height:175px;border:0'}));
+      };
+      box.append(full,el('p',{class:'small muted'},'已有 Apple Music 订阅可在播放器中登录听整首。免登录可试官方视频，版本见下方。'));
       const sample=el('audio',{controls:'',preload:'none',src:m.preview.url,style:'width:100%','aria-label':'免登录试听'});
       sample.onplay=()=>{if(songAudio!==sample)stopSongAudio();slot.replaceChildren();songAudio=sample;};
       box.append(el('p',{},'免登录试听 · 原声片段'),sample,
