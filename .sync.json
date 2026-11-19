@@ -1,5 +1,5 @@
 {
- "index.html": "ab0baeec04692e991f50c5a19bd1812eb6e79000",
+ "index.html": "a6cf5054eeb67d98ae237e67fa361def5af5f7d9",
  "songs/index.json": "1297450ad531dfff50bae986e887e640680f50f2",
  "packs/2026-10-20.json": "0dd1276672a8585b9ab5d15dec4fe54c4f3d02e1",
  "packs/2026-10-21.json": "3bf6853228d7881959401dd16ba359beee62722b",
@@ -24,5 +24,6 @@
  "packs/2026-11-12.json": "ac04af432b4e24de817f26e17bde0b2cafbcfdb6",
  "packs/2026-11-15.json": "c9a5ccdcab5d726d1992ee53bd5949a3dcbcdc31",
  "packs/2026-11-16.json": "ca367a74d3654e413c8e7d0dd09d39596d20d499",
- "packs/2026-11-18.json": "6375b2a73e69820db82ce4d09c42ea1331b73d5c"
+ "packs/2026-11-18.json": "6375b2a73e69820db82ce4d09c42ea1331b73d5c",
+ "packs/2026-11-20.json": "ad87ed1c0b75b5226e3d939dc428d4fa0cdda5da"
 }
