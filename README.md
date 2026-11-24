@@ -61,3 +61,5 @@ JLPT N2（2027-07-04）每日学习网页：听力、读解、单词语法（带
 - 每日检查未来至少7天覆盖，按roadmap补新课；只追加，不改已发布课程ID、日期、题目顺序。先看过去已教内容，避免把复习点当新课。
 - 进阶答题在 `progress.grammarPath[lessonId]` 单独保存，纳入备份/恢复。错题进入原错题本；Retry只重做当前进阶课。
 - 检查：`node tools/ui-check.js`、`node tools/grammar-path-check.js`、`node tools/song-check.js`。发布前确认原 packs/audio 无改动。
+
+歌曲内容更新后先执行 `node tools/render-song-pages.js`，将生成的首页和 songs/ 下的 HTML 与课程数据一起提交。每首歌的文本版都有独立链接，可直接交给只读取静态网页的工具。
