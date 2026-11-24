@@ -32,7 +32,10 @@ for (const s of songs) {
 fs.writeFileSync(path.join(out,'index.html'),page('歌曲课文本版','<h1>歌曲课文本版</h1><ul>' + links + '</ul>'));
 const index = path.join(root,'index.html');
 const html = fs.readFileSync(index,'utf8');
-const fallback = '<article id="songs"><h1>歌曲课文本版</h1><a href="songs/">全部歌曲课程</a>' + lesson(songs[0]) + '</article>';
-const marker = /(<main id="main" tabindex="-1">)[\s\S]*?(<\/main>)/;
-if (!marker.test(html)) throw Error('Missing main container');
-fs.writeFileSync(index, html.replace(marker, (_,start,end) => start + fallback + end));
+const catalog = links.replaceAll('href="', 'href="songs/');
+const fallback = '<article id="songs"><h1>N2 道場 · 日本の歌</h1><p>共 ' + songs.length
+  + ' 首歌。每课约 15～20 分钟，可听官方音源、逐句学习、做选择题。</p>'
+  + '<h2>歌单</h2><ul>' + catalog + '</ul>' + lesson(songs[0]) + '</article>';
+const marker = /<article id="songs">[\s\S]*?<\/article>/;
+if (!marker.test(html)) throw Error('Missing static song section');
+fs.writeFileSync(index, html.replace(marker, () => fallback));
