@@ -66,6 +66,22 @@
 .song-vocab-chip:hover{border-color:var(--ai)}
 .side-credits summary{font-size:12px;color:var(--muted)}
 .side-credits p{margin:4px 0 0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+/* N2 Exam Readiness Radar, Reading Timer & SRS Wrong-book */
+.n2-radar{display:grid;gap:10px;padding:12px 14px;border-radius:8px;background:var(--paper);border:1px solid var(--line)}
+.n2-radar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.n2-sec-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:3px}
+.n2-sec-card.ok{border-color:var(--ok)}.n2-sec-card.warn{border-color:var(--mark)}.n2-sec-card.ng{border-color:var(--ng)}
+.n2-sec-card .sc{font-family:var(--f-mono);font-size:18px;font-weight:700;color:var(--ink)}
+.n2-sec-card.ok .sc{color:var(--ok)}.n2-sec-card.ng .sc{color:var(--ng)}
+.read-timer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:8px;background:var(--paper);border:1px solid var(--line)}
+.read-timer.over{border-color:var(--ng);background:var(--ng-soft)}
+.read-timer.ok{border-color:var(--ok);background:var(--ok-soft)}
+.read-clock{font-family:var(--f-mono);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ai)}
+.read-timer.over .read-clock{color:var(--ng)}
+.wr-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px}
+.chip.ng{background:var(--ng-soft);color:var(--ng)}
+.chip.warn{background:var(--mark);color:var(--mark-ink)}
+@media (max-width:640px){.n2-radar-grid{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:640px){.song-flow{grid-template-columns:repeat(2,minmax(0,1fr))}.song-study-row{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:860px){.song-sticky-bar{position:static;box-shadow:none}}
 
@@ -511,7 +527,11 @@ function mergeProgress(a={},b={}){
   a=prepare(a); b=prepare(b);
   const mergeMap=(x={},y={})=>Object.fromEntries([...new Set([...Object.keys(y),...Object.keys(x)])].map(k=>[k,mergeRecord(x[k],y[k])]));
   const wrong=new Map();
-  for(const q of [...(a.wrong||[]),...(b.wrong||[])]) if(!wrong.has(qid(q))) wrong.set(qid(q),q);
+  for(const q of [...(a.wrong||[]),...(b.wrong||[])]){
+    const k=qid(q), prev=wrong.get(k);
+    if(!prev) wrong.set(k,q);
+    else if((Number(q.streak)||0)>(Number(prev.streak)||0)) wrong.set(k,{...prev,...q});
+  }
   return {version:2,days:mergeMap(a.days,b.days),materials:mergeMap(a.materials,b.materials),songs:mergeMap(a.songs,b.songs),grammarPath:mergeMap(a.grammarPath,b.grammarPath),wrong:[...wrong.values()].slice(0,300),arena:{...(b.arena||{}),...(a.arena||{})}};
 }
 function materialProgress(progress,id){
@@ -591,7 +611,7 @@ function renderSideFoot(){
   const f=$("#sideFoot"); const days=Object.values(store.progress.days);
   const totalMin=Math.round(days.reduce((a,d)=>a+(d.listenSec||0),0)/60);
   const m=store.audio[currentId];
-  f.innerHTML=`<div>连续打卡 <b>${streak()}</b> 天 · 累计听力 <b>${totalMin}</b> 分 · 錯題 <b>${store.progress.wrong.length}</b></div>
+  f.innerHTML=`<div>连续打卡 <b>${streak()}</b> 天 · 累计听力 <b>${totalMin}</b> 分 · <span style="white-space:nowrap">錯題 <b>${store.progress.wrong.length}</b></span></div>
   <div>合格线：总分 ≥ 90 / 180，言語知識・読解・聴解 每科 ≥ 19 / 60。</div>
   <div>${store.db?"进度已同步到你的账号。":"进度保存在这台设备的浏览器里。"}</div>
   <div class="backup-actions"><button class="btn small" id="exportProgress">备份记录</button><button class="btn small" id="importProgress">恢复备份</button><input type="file" id="progressFile" accept="application/json,.json" hidden></div>
@@ -630,14 +650,55 @@ async function importProgress(file){
     stopAll(); game=null; store.progress=mergeProgress(store.progress,p); saveProgress(); rerender(); toast("记录已合并，保留现有进度与错题");
   }catch(e){toast("恢复失败："+(e.message||"文件无法读取"));}
 }
+function wrongDueCount(){ return (store.progress.wrong||[]).filter(q=>!q.nextReview||q.nextReview<=TODAY).length; }
+function n2ExamStats(){
+  const sec={lang:{ok:0,tot:0},read:{ok:0,tot:0},listen:{ok:0,tot:0}};
+  for(const m of Object.values(store.progress.materials||{})){
+    for(const [k,v] of Object.entries(m.qs||{})){
+      if(typeof v!=="boolean")continue;
+      if(k.startsWith("R-")){ sec.read.tot++; if(v)sec.read.ok++; }
+      else if(k.startsWith("L")){ sec.listen.tot++; if(v)sec.listen.ok++; }
+      else { sec.lang.tot++; if(v)sec.lang.ok++; }
+    }
+  }
+  for(const g of Object.values(store.progress.grammarPath||{})){
+    for(const v of Object.values(g.qs||{})){ if(typeof v==="boolean"){ sec.lang.tot++; if(v)sec.lang.ok++; } }
+  }
+  for(const s of Object.values(store.progress.songs||{})){
+    for(const v of Object.values(s.qs||{})){ if(typeof v==="boolean"){ sec.lang.tot++; if(v)sec.lang.ok++; } }
+    for(const v of Object.values(s.kanjiQs||{})){ if(typeof v==="boolean"){ sec.lang.tot++; if(v)sec.lang.ok++; } }
+  }
+  const est=s=>s.tot?Math.round(s.ok/s.tot*60):null;
+  const eLang=est(sec.lang), eRead=est(sec.read), eListen=est(sec.listen);
+  const answeredTotal=sec.lang.tot+sec.read.tot+sec.listen.tot;
+  const totalEst=(eLang!=null&&eRead!=null&&eListen!=null)?(eLang+eRead+eListen):null;
+  const wrongByCat={kanji:0,grammar:0,read:0,listen:0,song:0};
+  for(const q of (store.progress.wrong||[])) wrongByCat[wrongCategory(q)]=(wrongByCat[wrongCategory(q)]||0)+1;
+  const due=wrongDueCount();
+  let advice={text:"先从今天的「词汇·语法」和「汉字读音速测」开始，建立第一批评估数据。",target:"vocab",cta:"去练词汇·语法"};
+  if(due>0) advice={text:`今日有 ${due} 道错题到期复习，先清掉到期错题最稳提分。`,target:"wrong",cta:"立刻复习到期错题"};
+  else if(wrongByCat.kanji>=3) advice={text:`汉字读音错题积压 ${wrongByCat.kanji} 道（你的核心提分点），建议专刷汉字读音。`,target:"wrong",cta:"专攻汉字读音"};
+  else if(eRead!=null&&eRead<30) advice={text:`読解正确率偏低（约 ${eRead}/60），建议开启「考场限时模式」强化定位速度。`,target:"read",cta:"去练読解限时"};
+  else if(eListen!=null&&eListen<30) advice={text:`聴解正确率偏低（约 ${eListen}/60），建议盲听做题后再对照原文跟读。`,target:"listen",cta:"去练聴解"};
+  else if(eLang!=null&&eLang<30) advice={text:`言語知識（文字・語彙・文法）约 ${eLang}/60，建议结合「每日进阶」与歌曲考点巩固。`,target:"path",cta:"去练每日进阶"};
+  else if(sec.read.tot===0) advice={text:"読解还没有答题记录，今天做 1 篇限时读解摸清真实速度。",target:"read",cta:"开始読解限时"};
+  else if(sec.listen.tot===0) advice={text:"聴解还没有答题记录，今天先盲听完成 1 段听力题。",target:"listen",cta:"开始聴解"};
+  return {sec,eLang,eRead,eListen,totalEst,answeredTotal,wrongByCat,due,advice};
+}
 function renderStudyPlan(){
   const host=$("#studyPlan"); if(!host||!pack())return;
   const st=status(), steps=[["vocab","词汇·语法","30 分钟"],["listen","听力训练","30 分钟"],["read","阅读理解","20 分钟"],["arena","题型练习","40 分钟"]];
   const completed=steps.filter(([id])=>st[id]?.done).length;
   const expanded=lsGet("n2planExpanded",window.matchMedia("(min-width:861px)").matches);
-  host.innerHTML=`<div class="plan-top"><h2>${currentId===TODAY?"今天的学习路线":"这套教材的学习路线"}</h2><span class="plan-score">${completed} / 4 项</span></div><div class="small muted">${esc(currentId)} · ${esc(pack().theme||"")}<div class="source-note">原创练习 · 按 JLPT 题型编写，不是历年真题</div></div><div class="plan-details" id="study-plan-details" ${expanded?"":"hidden"}><div class="plan-steps"></div></div><div class="bar"><i style="width:${completed/4*100}%"></i></div><div class="plan-bottom"><button class="btn small" id="planToggle" aria-expanded="${expanded}" aria-controls="study-plan-details">${expanded?"收起学习安排":"查看 2 小时安排"}</button><button class="btn small" id="reviewShortcut">复习错题（${store.progress.wrong.length}）</button></div>`;
+  const es=n2ExamStats(), totalW=store.progress.wrong.length;
+  const cardCls=sc=>sc==null?"":sc<19?" ng":sc<35?" warn":" ok";
+  const fmtSec=(label,s,sc)=>`<div class="n2-sec-card${cardCls(sc)}"><small class="muted">${label}</small><div class="sc">${sc==null?"待开练":`${sc}<span class="small muted"> / 60</span>`}</div><small class="muted">${s.tot?`${s.ok}/${s.tot} 题（${Math.round(s.ok/s.tot*100)}%）${sc<19?" · ⚠ 低于19分线":""}`:"做题后自动评估"}</small></div>`;
+  const estLabel=es.totalEst!=null?`参考估分 ${es.totalEst} / 180${es.totalEst>=90&&es.eLang>=19&&es.eRead>=19&&es.eListen>=19?"（达到合格线）":"（距 90 分合格线冲刺中）"}`:`已累计检测 ${es.answeredTotal} 题 · 三科均有作答后显示参考估分`;
+  const reviewBtnLabel=es.due>0?`复习错题（到期 ${es.due} / 共 ${totalW}）`:`复习错题（${totalW}）`;
+  host.innerHTML=`<div class="plan-top"><h2>${currentId===TODAY?"今天的学习路线":"这套教材的学习路线"}</h2><span class="plan-score">${completed} / 4 项</span></div><div class="small muted">${esc(currentId)} · ${esc(pack().theme||"")}<div class="source-note">原创练习 · 按 JLPT N2 题型编写（非历年真题）· 目标：总分 ≥ 90/180、每科 ≥ 19/60</div></div><div class="plan-details" id="study-plan-details" ${expanded?"":"hidden"}><div class="plan-steps"></div><div class="n2-radar" aria-label="N2 合格线与分科弱项雷达"><div class="row" style="justify-content:space-between"><b class="small">🎯 N2 三科弱项雷达（基于累计练习正确率参考）</b><span class="small muted">${esc(estLabel)}</span></div><div class="n2-radar-grid">${fmtSec("言語知識（文字・語彙・文法）",es.sec.lang,es.eLang)}${fmtSec("読解（时间与定位）",es.sec.read,es.eRead)}${fmtSec("聴解（盲听反应）",es.sec.listen,es.eListen)}</div><div class="row" style="justify-content:space-between"><span class="small"><b>今日优先补弱：</b>${esc(es.advice.text)}</span><button class="btn small pri" id="weakAction">${esc(es.advice.cta)} →</button></div></div></div><div class="bar"><i style="width:${completed/4*100}%"></i></div><div class="plan-bottom"><button class="btn small" id="planToggle" aria-expanded="${expanded}" aria-controls="study-plan-details">${expanded?"收起学习安排":"查看 2 小时安排与弱项雷达"}</button><button class="btn small${es.due>0?" pri":""}" id="reviewShortcut">${reviewBtnLabel}</button></div>`;
   const grid=$(".plan-steps",host);
   steps.forEach(([id,title,time],i)=>{const b=el("button",{class:"plan-step"+(st[id]?.done?" done":""),...(tab===id?{"aria-current":"step"}:{})},`<small>${st[id]?.done?"已完成":String(i+1).padStart(2,"0")} · ${time}</small><b>${title}</b><small>${esc(st[id]?.label||"待开始")}</small>`);b.onclick=()=>go(id);grid.append(b);});
+  $("#weakAction",host).onclick=()=>go(es.advice.target);
   $("#reviewShortcut",host).onclick=()=>go("wrong");
   $("#planToggle",host).onclick=()=>{lsSet("n2planExpanded",!expanded);renderStudyPlan();};
 }
@@ -664,7 +725,9 @@ function status(){
 function streak(){ let n=0; const d=new Date(today); for(;;){ const k=dayKey(d); const x=store.progress.days[k]; if(x&&(x.listenSec>=1800||Object.keys(x.arena||{}).length>=3||Object.keys(x.answered||{}).length>=5)){n++; d.setDate(d.getDate()-1);} else if(k===TODAY){ d.setDate(d.getDate()-1);} else break; if(n>400)break; } return n; }
 
 /* ================= 渲染 ================= */
-let stopper=null; function stopAll(){ stopSongAudio(); if(stopper){stopper();stopper=null;} stopAudio(); if(tts.ok) speechSynthesis.cancel(); pauseTimer(); for(const reset of playbackButtons)reset(); }
+let stopper=null, readTimer={running:false,iv:null,limit:180,elapsed:0};
+function stopReadTimer(){ if(readTimer.iv){clearInterval(readTimer.iv);readTimer.iv=null;} readTimer.running=false; }
+function stopAll(){ stopSongAudio(); stopReadTimer(); if(stopper){stopper();stopper=null;} stopAudio(); if(tts.ok) speechSynthesis.cancel(); pauseTimer(); for(const reset of playbackButtons)reset(); }
 function rerender(){
   if(tab==="adult"&&!showAdult()) tab="listen";
   if(!currentId||!getPack(currentId)) pickCurrent(); ensureAudio(currentId);
@@ -734,14 +797,50 @@ function qBlock(q,key,onAnswer,record){
     b.onclick=()=>{ if(box.dataset.done) return; box.dataset.done="1"; const right=i===q.answer;
       b.classList.add(right?"right":"wrong"); opts.children[q.answer].classList.add("right"); [...opts.children].forEach(x=>x.disabled=true);
       safe(()=>slot.replaceChildren(expBox(q,i)));
-      safe(()=>{ if(key){ d.qs[key]=right; d.choices[key]=i; } recordAnswer(key||qid(q)); if(!right) addWrong(q); onAnswer&&onAnswer(right); saveProgress(); renderTabs(); }); };
+      safe(()=>{ if(key){ d.qs[key]=right; d.choices[key]=i; } recordAnswer(key||qid(q)); if(!right){ const autoFrom=q.from||(key?.startsWith("L")?`聴解 · ${currentId}`:key?.startsWith("R-")?`読解 · ${currentId}`:key?.startsWith("G")?`文法 · ${currentId}`:key?.startsWith("X-")?"每日进阶 · 文法":key?.startsWith("VK-")?`汉字读音 · ${currentId}`:currentId); addWrong({...q,from:autoFrom}); } onAnswer&&onAnswer(right); saveProgress(); renderTabs(); }); };
     opts.append(b); });
   if(key && key in d.qs){ box.dataset.done="1"; const choice=d.choices[key]; opts.children[q.answer].classList.add("right"); if(Number.isInteger(choice)&&choice!==q.answer)opts.children[choice]?.classList.add("wrong"); [...opts.children].forEach(x=>x.disabled=true); const explanation=expBox(q,Number.isInteger(choice)?choice:null); if(!Number.isInteger(choice)&&d.qs[key]===false)$(".verdict",explanation).textContent=`上次答错 · 正确答案 ${q.answer+1}`; slot.replaceChildren(explanation); }
   box.append(opts,slot); return box;
 }
 /* 出错也不能卡住做题：把错误弹出来，方便报告 */
 function safe(fn){ try{ fn(); }catch(e){ console.error(e); toast("出了点问题："+(e&&e.message||e)); } }
-function addWrong(q){ if(!Array.isArray(store.progress.wrong)) store.progress.wrong=Object.values(store.progress.wrong||{}); const w=store.progress.wrong; if(w.some(x=>qid(x)===qid(q))) return; w.unshift({q:q.q,options:q.options,answer:q.answer,explain:q.explain,why:q.why,point:q.point,passage:q.passage,reply:!!q.reply,from:q.from||currentId}); if(w.length>300) w.length=300; }
+const WRONG_CATS={kanji:"漢字読み",grammar:"語彙・文法",read:"読解",listen:"聴解",song:"日本の歌"};
+const WRONG_SRS_DAYS=[1,3];
+function wrongCategory(q){
+  if(q.cat&&WRONG_CATS[q.cat])return q.cat;
+  const from=String(q.from||"");
+  if(q.reply||/聴解|听力|即時応答/.test(from))return "listen";
+  if((/【[^】]*[一-龯々][^】]*】/.test(q.q||"")&&(q.options||[]).every(o=>/^[ぁ-ゖァ-ヺー]+$/.test(o)))||/读音|漢字読み|表記/.test(from))return "kanji";
+  if(q.passage||/読解|文章/.test(from))return "read";
+  if(/歌曲/.test(from))return "song";
+  return "grammar";
+}
+function addWrong(q){
+  if(!Array.isArray(store.progress.wrong)) store.progress.wrong=Object.values(store.progress.wrong||{});
+  const w=store.progress.wrong, id=qid(q), idx=w.findIndex(x=>qid(x)===id);
+  const item={q:q.q,options:q.options,answer:q.answer,explain:q.explain,why:q.why,point:q.point,passage:q.passage,reply:!!q.reply,from:q.from||currentId,cat:wrongCategory(q),streak:0,nextReview:TODAY,lastWrong:TODAY};
+  if(idx>=0) w.splice(idx,1);
+  w.unshift(item);
+  if(w.length>300) w.length=300;
+}
+function reviewWrongResult(q,ok){
+  const w=store.progress.wrong, idx=w.findIndex(x=>qid(x)===qid(q));
+  if(idx<0)return null;
+  const item=w[idx];
+  if(!ok){
+    item.streak=0; item.nextReview=TODAY; item.lastWrong=TODAY;
+    return {removed:false,msg:"答错了，已重置为第 1 轮，继续留在今日待复习。"};
+  }
+  const nextStreak=(Number(item.streak)||0)+1;
+  if(nextStreak>=3){
+    w.splice(idx,1);
+    return {removed:true,msg:"🏆 连续 3 轮抗遗忘复习全对！已彻底掌握并移出错题本。"};
+  }
+  const days=WRONG_SRS_DAYS[nextStreak-1]||3;
+  item.streak=nextStreak;
+  item.nextReview=addDaysISO(TODAY,days);
+  return {removed:false,msg:`✓ 第 ${nextStreak}/3 轮答对！已排入 ${item.nextReview}（D+${days}）再次巩固。`};
+}
 
 /* --- 聴解 --- */
 let timer={running:false,t0:0,iv:null};
@@ -768,12 +867,14 @@ function playAllBtn(lines,prefix,ulOf,extra){ const play=el("button",{class:"btn
   play.onclick=start; return play; }
 function vListen(v){
   head(v,"聴解トレーニング","每日 30 分钟 · 新闻 / 动画 / 日剧");
+  const d=P(), lKeys=pack().listening.flatMap((seg,si)=>seg.questions.map((_,qi)=>`L${si}-${qi}`));
+  const lAns=lKeys.filter(k=>k in d.qs).length, lOk=lKeys.filter(k=>d.qs[k]===true).length;
   const t=el("div",{class:"panel"});
-  t.innerHTML=`<div class="clockrow"><span class="clock" id="clock">00:00</span><span class="small muted"><span id="clockState">播放时自动计时</span> · 目标 30:00</span></div><div class="bar" style="margin-top:10px"><i id="clockBar"></i></div>`;
+  t.innerHTML=`<div class="clockrow" style="justify-content:space-between"><div class="clockrow"><span class="clock" id="clock">00:00</span><span class="small muted"><span id="clockState">播放时自动计时</span> · 目标 30:00</span></div><span class="chip ${lAns===lKeys.length&&lKeys.length?"ok":""}" id="listenStat">本套听力题：${lOk}/${lAns} 正确（共 ${lKeys.length} 题）</span></div><div class="bar" style="margin-top:10px"><i id="clockBar"></i></div>`;
+  const refreshListenStat=()=>{ const a=lKeys.filter(k=>k in d.qs).length, o=lKeys.filter(k=>d.qs[k]===true).length, s=$("#listenStat",t); if(s){s.textContent=`本套听力题：${o}/${a} 正确（共 ${lKeys.length} 题）`;s.classList.toggle("ok",a===lKeys.length&&lKeys.length>0);} };
   v.append(t); setTimeout(tickClock);
   v.append(voiceControls({pitch:true}));
   v.append(el("p",{class:"tip",style:"margin:0"},"<b>怎么练：</b>① 先只听，做题（像考试一样不看文字）→ ② 看讲解，找出没听出来的那句 → ③ 打开文字稿，点句子逐句跟读 → ④ 关掉读音再盲听一遍。"));
-  const d=P();
   pack().listening.forEach((seg,si)=>{
     const p=el("div",{class:"panel seg"});
     const h=el("div",{class:"seg-head"},`<div><span class="chip">${esc(seg.label)}</span> <span class="chip">${esc(seg.task||"ポイント理解")}</span><h3 style="margin-top:6px">${rb(seg.title)}</h3><div class="small muted">${esc(seg.setting||"")}</div></div>`);
@@ -783,7 +884,7 @@ function vListen(v){
     const allDone=()=>seg.questions.every((_,qi)=>`L${si}-${qi}` in d.qs);
     let tip=null;
     if(seg.tip){ tip=el("details",{class:"fold"}); tip.innerHTML=`<summary>听力技巧（听后再看）</summary><p class="tip">${rb(seg.tip)}</p>`; tip.open=allDone(); p.append(tip); }
-    seg.questions.forEach((q,qi)=>qs.append(qBlock(q,`L${si}-${qi}`,()=>{ if(allDone()){det.open=true;if(tip)tip.open=true;} })));
+    seg.questions.forEach((q,qi)=>qs.append(qBlock(q,`L${si}-${qi}`,()=>{ refreshListenStat(); if(allDone()){det.open=true;if(tip)tip.open=true;} })));
     p.append(qs);
     det.innerHTML=`<summary>文字稿（做完题再看）</summary>`; det.append(lineList(seg.lines,`L${si}-`)); if(allDone()) det.open=true;
     p.append(det); v.append(p);
@@ -794,13 +895,50 @@ function vListen(v){
 function vRead(v){
   const r=pack().reading;
   if(!r){ head(v,"読解","今日の読解"); v.append(el("div",{class:"empty"},"这套教材没有读解。")); return; }
-  head(v,rb(r.title),`${esc(r.type||"読解")}`);
-  v.append(voiceControls({speech:false}));
+  stopReadTimer();
+  const charLen=(r.text||[]).map(plain).join("").length;
+  const limitSec=/長文|情報検索/.test(r.type||"")||charLen>600?480:/中文|統合/.test(r.type||"")||charLen>320?300:180;
+  const fmtTime=s=>`${String(Math.floor(Math.abs(s)/60)).padStart(2,"0")}:${String(Math.abs(s)%60).padStart(2,"0")}`;
+  head(v,rb(r.title),`${esc(r.type||"読解")} · 约 ${charLen} 字 · N2 建议用时 ${Math.round(limitSec/60)} 分钟`);
+  const d=P(), allReadDone=()=>r.questions.every((_,i)=>`R-${i}` in d.qs);
+  // Exam countdown timer bar
+  const tBar=el("div",{class:"read-timer"});
+  const tLeft=el("div",{class:"row"},`<span class="read-clock" id="readClock">${fmtTime(limitSec)}</span><span class="small muted" id="readState">考场限时模式：点击开始后自动隐藏中文并倒计时</span>`);
+  const tBtns=el("div",{class:"row"});
+  const tStart=el("button",{type:"button",class:"btn pri small"},"▶ 开始限时做题");
+  const tReset=el("button",{type:"button",class:"btn small"},"重置计时");
+  const updateReadUI=()=>{
+    const clk=$("#readClock",tBar), st=$("#readState",tBar);
+    if(!clk||!st)return;
+    const rem=readTimer.limit-readTimer.elapsed;
+    tBar.classList.toggle("over",rem<0);
+    clk.textContent=rem>=0?fmtTime(rem):`+${fmtTime(rem)}`;
+    if(!readTimer.running&&readTimer.elapsed>0&&allReadDone()){
+      tBar.classList.toggle("ok",rem>=0);
+      st.textContent=rem>=0?`✓ 考场节奏达标！实际用时 ${fmtTime(readTimer.elapsed)} / 建议 ${fmtTime(readTimer.limit)}`:`⚠ 已超时（实际用时 ${fmtTime(readTimer.elapsed)}），下次可先看题干关键词再定位原文`;
+    }else if(readTimer.running){
+      st.textContent=rem>=0?`限时进行中（建议 ${Math.round(readTimer.limit/60)} 分钟内完成）`:`已超时 ${fmtTime(rem)}，坚持做完再复盘定位速度`;
+    }
+  };
+  readTimer={running:false,iv:null,limit:limitSec,elapsed:0};
+  tStart.onclick=()=>{
+    if(readTimer.running){ stopReadTimer(); tStart.textContent="▶ 继续计时"; updateReadUI(); return; }
+    // Hide Chinese translation automatically during exam simulation
+    document.body.classList.add("nozh"); lsSet("n2zh",false); syncToggles();
+    readTimer.running=true; tStart.textContent="⏸ 暂停";
+    readTimer.iv=setInterval(()=>{ readTimer.elapsed++; updateReadUI(); },1000);
+    updateReadUI();
+  };
+  tReset.onclick=()=>{ stopReadTimer(); readTimer={running:false,iv:null,limit:limitSec,elapsed:0}; tBar.classList.remove("over","ok"); tStart.textContent="▶ 开始限时做题"; $("#readClock",tBar).textContent=fmtTime(limitSec); $("#readState",tBar).textContent="考场限时模式：点击开始后自动隐藏中文并倒计时"; };
+  tBtns.append(tStart,tReset); tBar.append(tLeft,tBtns);
+  v.append(tBar,voiceControls({speech:false}));
   const p=el("div",{class:"panel",style:"display:grid;gap:14px"});
   if(r.tip) p.append(el("p",{class:"tip",style:"margin:0"},`<b>读解技巧：</b>${rb(r.tip)}`));
   p.append(el("div",{class:"passage"},r.text.map(x=>`<p>${rb(x)}</p>`).join("")));
   if(r.zh) p.append(el("div",{class:"zh hideable explain"},`<b>中文意思</b><p style="margin:0">${esc(r.zh)}</p>`));
-  const qs=el("div",{class:"qs"}); r.questions.forEach((q,i)=>qs.append(qBlock(q,`R-${i}`))); p.append(qs);
+  const qs=el("div",{class:"qs"});
+  r.questions.forEach((q,i)=>qs.append(qBlock(q,`R-${i}`,()=>{ if(readTimer.running&&allReadDone()){ stopReadTimer(); tStart.textContent="▶ 重新限时"; updateReadUI(); } })));
+  p.append(qs);
   v.append(p);
 }
 
@@ -863,6 +1001,39 @@ function vVocab(v){
     if(flash) c.addEventListener("click",e=>{ if(e.target.tagName!=="A") c.classList.toggle("peek"); });
     grid.append(c); });
   v.append(grid);
+  // Dedicated N2 問題1 Kanji Reading Drill for today's vocab (targets learner's #1 weakness)
+  const kanjiWords=pack().vocab.map((w,i)=>({w,i})).filter(({w})=>/[一-龯々]/.test(w.w)&&/^[ぁ-ゖー]+$/.test(w.r));
+  if(kanjiWords.length){
+    const kDet=el("details",{class:"panel",style:"display:grid;gap:10px"});
+    const allR=kanjiWords.map(x=>x.w.r);
+    const kOk=()=>kanjiWords.filter(({i})=>d.qs[`VK-${i}`]===true).length;
+    const kDone=()=>kanjiWords.filter(({i})=>`VK-${i}` in d.qs).length;
+    const kSum=el("summary",{style:"font-weight:700"},`🎯 今日词汇 · N2 汉字读音速测（专攻短板 · 已对 ${kOk()}/${kanjiWords.length} 题）`);
+    const kBody=el("div",{class:"qs"});
+    const syncKSum=()=>{ kSum.textContent=`🎯 今日词汇 · N2 汉字读音速测（专攻短板 · 已对 ${kOk()}/${kanjiWords.length} 题${kDone()===kanjiWords.length?" · ✓ 已完成":""}）`; };
+    const kTop=el("div",{class:"row",style:"justify-content:space-between;padding-top:8px"},`<span class="small muted">不看注音直接选出【划线词】的正确读音，答错自动进入错题本「漢字読み」专项。</span>`);
+    const kReset=el("button",{type:"button",class:"btn small"},"重测本组读音");
+    kReset.onclick=()=>{ kanjiWords.forEach(({i})=>{ delete d.qs[`VK-${i}`]; delete d.choices[`VK-${i}`]; }); saveProgress(); rerender(); };
+    kTop.append(kReset); kBody.append(kTop);
+    kanjiWords.forEach(({w,i})=>{
+      const exPlain=plain(w.ex||"");
+      const stem=exPlain.includes(w.w)?exPlain.replace(w.w,`【${w.w}】`):`【${w.w}】（${w.zh}）`;
+      const dist=makeReadingDistractors(w.r,allR,`${currentId}|vk|${i}|${w.w}`);
+      const options=seededShuffle([w.r,...dist],`${currentId}|vko|${i}|${w.w}`);
+      const answer=options.indexOf(w.r);
+      const qObj={
+        q:stem, options, answer,
+        explain:`「${w.w}」读作「${w.r}」（${w.zh}）。${w.note?plain(w.note):""}`,
+        why:options.map((o,oi)=>oi===answer?`✓ 正确读音：${w.w}（${w.r}）。`:`混淆项（留意长音、浊音、促音或拨音）。`),
+        point:`点词听 VOICEVOX 原声核对语调：${w.w}＝${w.r}。`,
+        from:`词汇读音 · ${currentId}`,
+        cat:"kanji"
+      };
+      kBody.append(qBlock(qObj,`VK-${i}`,()=>{ syncKSum(); speak(w.r,{key:`V${i}w`}); }));
+    });
+    kDet.append(kSum,kBody);
+    v.append(kDet);
+  }
   const g=el("div",{class:"gram"});
   g.append(el("h3",{style:"font-size:22px;margin-top:8px"},"今日の文法"));
   pack().grammar.forEach((gp,gi)=>{
@@ -932,12 +1103,12 @@ function vArena(v){
   pack().arena.forEach((a,i)=>{ const best=(d.arena||{})[i];
     const b=el("button",{class:"stage"});
     b.innerHTML=`<span class="small muted">第 ${i+1} 関</span><b>${esc(a.name)}</b><span class="small muted">${esc(a.zh)}</span><span class="stars">${[0,1,2].map(k=>`<span class="${best!==undefined&&k<best?"":"off"}">★</span>`).join("")}</span>`;
-    b.onclick=()=>{ gameResult=null; game={idx:i,packId:currentId,items:a.items.map(it=>({...it,from:currentId,reply:!!a.reply,...(a.passage?{passage:a.passage}:{})})),name:a.name,zh:a.zh,reply:!!a.reply,qi:0,hearts:3,right:0,answered:false}; rerender(); };
+    b.onclick=()=>{ gameResult=null; game={idx:i,packId:currentId,items:a.items.map(it=>({...it,from:`${a.name} · ${currentId}`,reply:!!a.reply,...(a.passage?{passage:a.passage}:{})})),name:a.name,zh:a.zh,reply:!!a.reply,qi:0,hearts:3,right:0,answered:false}; rerender(); };
     grid.append(b); });
   v.append(grid);
   const mix=el("div",{class:"panel row",style:"justify-content:space-between"});
   mix.innerHTML=`<div><b>ランダム 10 問</b><div class="small muted">从所有教材和錯題本里随机抽 10 题，不计入当天关卡。</div></div>`;
-  const mb=el("button",{class:"btn pri"},"开始挑战"); mb.onclick=()=>{ const pool=[]; packIds().forEach(id=>{const pk=getPack(id); pk&&pk.arena.forEach(a=>a.items.forEach(it=>pool.push({...it,from:id,reply:!!a.reply,passage:a.passage})));}); store.progress.wrong.forEach(w=>pool.push(w)); const unique=[...new Map(pool.map(q=>[qid(q),q])).values()]; for(let i=unique.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[unique[i],unique[j]]=[unique[j],unique[i]];} gameResult=null;game={idx:-1,items:unique.slice(0,10),name:"ランダム 10 問",qi:0,hearts:3,right:0,answered:false}; rerender(); };
+  const mb=el("button",{class:"btn pri"},"开始挑战"); mb.onclick=()=>{ const pool=[]; packIds().forEach(id=>{const pk=getPack(id); pk&&pk.arena.forEach(a=>a.items.forEach(it=>pool.push({...it,from:`${a.name} · ${id}`,reply:!!a.reply,passage:a.passage})));}); store.progress.wrong.forEach(w=>pool.push(w)); const unique=[...new Map(pool.map(q=>[qid(q),q])).values()]; for(let i=unique.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[unique[i],unique[j]]=[unique[j],unique[i]];} gameResult=null;game={idx:-1,items:unique.slice(0,10),name:"ランダム 10 問",qi:0,hearts:3,right:0,answered:false}; rerender(); };
   mix.append(mb); v.append(mix);
 }
 function vGame(v){
@@ -960,12 +1131,15 @@ function vGame(v){
       b.classList.add(ok?"right":"wrong"); opts.children[q.answer].classList.add("right");
       [...opts.children].forEach(x=>x.disabled=true);
       if(ok)g.right++;else if(!g.review)g.hearts--;
-      recordAnswer(`arena:${qid(q)}`); if(g.review&&ok)store.progress.wrong=store.progress.wrong.filter(w=>qid(w)!==qid(q));
-      if(!ok)safe(()=>addWrong({...q,reply:!!isReply})); saveProgress();renderTabs();
+      recordAnswer(`arena:${qid(q)}`);
+      let reviewNote="";
+      if(g.review){ const rr=reviewWrongResult(q,ok); if(rr)reviewNote=rr.msg; }
+      else if(!ok) safe(()=>addWrong({...q,reply:!!isReply}));
+      saveProgress();renderTabs();
       next.hidden=false; if(g.hearts<=0){ next.textContent="看结果"; }
       $(".hearts",v)&&($(".hearts",v).textContent="♥".repeat(Math.max(0,g.hearts))+"♡".repeat(3-Math.max(0,g.hearts)));
       safe(()=>{ if(isReply){ showStem(); if(akey&&pitchOf(akey)) stem.insertAdjacentHTML("beforeend",pitchLine(akey,false)); } });
-      safe(()=>slot.replaceChildren(expBox(q,i))); next.focus({preventScroll:true}); };
+      safe(()=>{ const ex=expBox(q,i); if(reviewNote)ex.append(el("p",{class:"small",style:"color:var(--ai);font-weight:700"},esc(reviewNote))); slot.replaceChildren(ex); }); next.focus({preventScroll:true}); };
     opts.append(b); });
   next.onclick=()=>{ if(g.hearts<=0||g.qi+1>=g.items.length){ finishGame(); } else { g.qi++; g.answered=false; rerender(); } };
   p.append(opts,slot,next); v.append(p);
@@ -2014,15 +2188,68 @@ function vSongs(v){
   v.append(el('p',{class:'small muted'},'歌词课依据你提供的段落编写；标注为原创的练习句不是歌词。歌曲使用官方播放器，不在本站存放原唱录音。学习进度、汉字读音测验与抗遗忘复习记录均纳入「备份记录」。'));
 }
 
-/* --- 錯題本 --- */
+/* --- 錯題本（抗遗忘三轮 SRS：首轮 → D+1 → D+3 → 彻底掌握移出）--- */
+let wrongFilter="all";
 function vWrong(v){
   const w=store.progress.wrong;
-  head(v,"錯題本",`${w.length} 题 · 答对一次就移出`);
-  if(!w.length){ v.append(el("div",{class:"empty"},"还没有待复习的错题。闯关、听力、读解和语法练习答错后会自动收进这里。")); const b=el("button",{class:"btn pri"},"去做题");b.onclick=()=>go("arena");v.append(b);return; }
-  const review=el("div",{class:"panel row",style:"justify-content:space-between"},`<div><b>把错题再做一遍</b><div class="small muted">随机最多 10 题 · 不扣心 · 答对后移出错题本</div></div>`);
-  const start=el("button",{class:"btn pri"},"开始错题复习");start.onclick=()=>{const items=[...w];for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}gameResult=null;game={idx:-1,review:true,items:items.slice(0,10),name:"错题集中复习",qi:0,hearts:3,right:0,answered:false};go("arena");};review.append(start);v.append(review);
+  const dueList=w.filter(q=>!q.nextReview||q.nextReview<=TODAY);
+  head(v,"錯題本",`共 ${w.length} 题 · 今日到期 ${dueList.length} 题 · 连续 3 轮抗遗忘答对才移出`);
+  if(!w.length){ v.append(el("div",{class:"empty"},"还没有待复习的错题。闯关、听力、读解、语法和歌曲测验答错后会自动收进这里。")); const b=el("button",{class:"btn pri"},"去做题");b.onclick=()=>go("arena");v.append(b);return; }
+  const launch=(pool,title)=>{
+    if(!pool.length){ toast("当前筛选下没有待复习的错题"); return; }
+    const items=[...pool];
+    for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}
+    gameResult=null; game={idx:-1,review:true,items:items.slice(0,10),name:title,qi:0,hearts:3,right:0,answered:false}; go("arena");
+  };
+  const counts={all:w.length,due:dueList.length,kanji:0,grammar:0,read:0,listen:0,song:0};
+  w.forEach(q=>{ const c=wrongCategory(q); counts[c]=(counts[c]||0)+1; });
+  const filtered=w.filter(q=>wrongFilter==="all"?true:wrongFilter==="due"?(!q.nextReview||q.nextReview<=TODAY):wrongCategory(q)===wrongFilter);
+
+  const review=el("div",{class:"panel",style:"display:grid;gap:12px"});
+  const topRow=el("div",{class:"row",style:"justify-content:space-between"},`<div><b>抗遗忘错题集中复习（不扣心）</b><div class="small muted">答对第 1 次排入明天（D+1），第 2 次排入 3 天后（D+3），第 3 次彻底消灭移出；答错重置回第 1 轮。</div></div>`);
+  const btnRow=el("div",{class:"row"});
+  const startDue=el("button",{type:"button",class:"btn pri"},dueList.length?`开始今日到期复习（${Math.min(10,dueList.length)} 题）`:"全部随机复习（最多 10 题）");
+  startDue.onclick=()=>launch(dueList.length?dueList:w,dueList.length?"错题到期复习":"错题集中复习");
+  btnRow.append(startDue);
+  if(wrongFilter!=="all"&&wrongFilter!=="due"&&filtered.length){
+    const startCat=el("button",{type:"button",class:"btn"},`专刷「${WRONG_CATS[wrongFilter]}」（${Math.min(10,filtered.length)} 题）`);
+    startCat.onclick=()=>launch(filtered,`专项错题 · ${WRONG_CATS[wrongFilter]}`);
+    btnRow.append(startCat);
+  }
+  topRow.append(btnRow);
+  const fRow=el("div",{class:"row"});
+  [["all",`全部 (${counts.all})`],["due",`🔔 今日到期 (${counts.due})`],["kanji",`漢字読み (${counts.kanji})`],["grammar",`語彙・文法 (${counts.grammar})`],["read",`読解 (${counts.read})`],["listen",`聴解 (${counts.listen})`],["song",`日本の歌 (${counts.song})`]].forEach(([id,label])=>{
+    const fb=el("button",{type:"button",class:"btn small"+(wrongFilter===id?" pri":"")},label);
+    fb.onclick=()=>{ wrongFilter=id; rerender(); };
+    fRow.append(fb);
+  });
+  review.append(topRow,fRow);
+  v.append(review);
+
+  if(!filtered.length){ v.append(el("div",{class:"empty"},"这个分类下目前没有错题。")); return; }
   const list=el("div",{class:"wrongs"});
-  w.slice(0,60).forEach(q=>{ const box=el("div",{class:"wr"}); box.append(el("div",{class:"small muted"},`来自 ${esc(q.from||"")}`)); box.append(qBlock(q,null,ok=>{ if(ok){ const i=w.indexOf(q); if(i>=0) w.splice(i,1); saveProgress(); setTimeout(rerender,1600);} })); list.append(box); });
+  filtered.slice(0,60).forEach(q=>{
+    const box=el("div",{class:"wr"});
+    const cat=wrongCategory(q), st=Number(q.streak)||0, isDue=!q.nextReview||q.nextReview<=TODAY;
+    const stageTxt=st===0?"第 1 轮（待攻克）":isDue?`🔔 第 ${st+1}/3 轮（今日到期）`:`巩固中 ${st}/3 · 下次 ${q.nextReview}`;
+    const hdr=el("div",{class:"wr-head"},`<div class="row" style="gap:6px"><span class="chip">${esc(WRONG_CATS[cat])}</span><span class="chip ${isDue?"warn":"ok"}" data-wr-stage>${esc(stageTxt)}</span><span class="small muted">来自 ${esc(q.from||"")}</span></div>`);
+    const drop=el("button",{type:"button",class:"btn ghost small"},"已掌握·移出");
+    drop.onclick=()=>{ const idx=w.indexOf(q); if(idx>=0){ w.splice(idx,1); saveProgress(); toast("已手动移出错题本"); rerender(); } };
+    hdr.append(drop);
+    box.append(hdr);
+    box.append(qBlock(q,null,ok=>{
+      const rr=reviewWrongResult(q,ok);
+      saveProgress(); renderTabs();
+      const sb=$("[data-wr-stage]",hdr);
+      if(sb&&rr){
+        sb.className="chip "+(rr.removed||ok?"ok":"warn");
+        sb.textContent=rr.removed?"🏆 已掌握移出":ok?`巩固中 ${q.streak}/3 · 下次 ${q.nextReview}`:"已重置 · 第 1 轮";
+      }
+      if(rr) toast(rr.msg);
+      if(ok) setTimeout(rerender,1500);
+    }));
+    list.append(box);
+  });
   v.append(list);
 }
 
