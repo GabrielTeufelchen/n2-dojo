@@ -27,12 +27,12 @@ assert.deepEqual(result(`(()=>{
 })()`), [2, 70, 90], 'Legacy migration must preserve records and not alias day/pack state');
 
 assert.deepEqual(result(`(()=>{
- const q={q:'a',options:['x','y'],answer:0,streak:1,nextReview:'2026-11-27'};
- const q2={q:'a',options:['x','y'],answer:0,streak:2,nextReview:'2026-11-30'};
+ const q={q:'a',options:['x','y'],answer:0,streak:1,misses:3,nextReview:'2026-11-27'};
+ const q2={q:'a',options:['x','y'],answer:0,streak:2,misses:1,nextReview:'2026-11-30'};
  const p=mergeProgress({version:2,days:{d:{listenSec:50}},materials:{m:{vocab:[0],qs:{q:false},choices:{q:1},arena:{0:1}}},wrong:[q]},
  {version:2,days:{d:{listenSec:40}},materials:{m:{vocab:[1],qs:{r:true},arena:{0:3}}},wrong:[q2,{...q,q:'b'}]});
- return [p.days.d.listenSec,p.materials.m.vocab,p.materials.m.qs,p.materials.m.choices,p.materials.m.arena,p.wrong.length,p.wrong[0].streak];
-})()`), [50,[0,1],{r:true,q:false},{q:1},{0:3},2,2], 'Import must union progress and wrong questions, keeping higher SRS streak and not double-count time');
+ return [p.days.d.listenSec,p.materials.m.vocab,p.materials.m.qs,p.materials.m.choices,p.materials.m.arena,p.wrong.length,p.wrong[0].streak,p.wrong[0].misses];
+})()`), [50,[0,1],{r:true,q:false},{q:1},{0:3},2,2,3], 'Import must union progress and wrong questions, keeping higher SRS streak and max misses');
 
 console.log('UI syntax + 3 progress regression checks passed.');
 
