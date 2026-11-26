@@ -47,9 +47,9 @@ for (const line of course.lines){
 for(const q of course.quiz)assert.ok(Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.options.length&&q.explain);
 for(const song of songs)assert.match(song.media.youtube,/^[A-Za-z0-9_-]{11}$/);
 assert.deepEqual(result(`(()=>{
- const a={songs:{flower:{learned:[0,1],qs:{0:true},choices:{0:0}}}};
- const b={songs:{flower:{learned:[1,2],qs:{1:false},choices:{1:2}}}};
+ const a={songs:{flower:{learned:[0,1],tasks:[0],qs:{0:true},choices:{0:0},kanjiQs:{'花|はな':true},srs:{level:2,last:'2026-11-26',next:'2026-11-29'}}}};
+ const b={songs:{flower:{learned:[1,2],tasks:[1],qs:{1:false},choices:{1:2},kanjiQs:{'種|たね':false},srs:{level:1,last:'2026-11-25',next:'2026-11-26'}}}};
  const p=mergeProgress(a,b);
- return [p.songs.flower.learned,p.songs.flower.qs,p.songs.flower.choices,mergeProgress(JSON.parse(JSON.stringify(p))).songs.flower.learned];
-})()`),[[0,1,2],{1:false,0:true},{1:2,0:0},[0,1,2]],'Song progress must survive backup/import merging independently of daily materials');
+ return [p.songs.flower.learned,p.songs.flower.tasks,p.songs.flower.qs,p.songs.flower.choices,p.songs.flower.kanjiQs,p.songs.flower.srs.level,mergeProgress(JSON.parse(JSON.stringify(p))).songs.flower.learned];
+})()`),[[0,1,2],[0,1],{1:false,0:true},{1:2,0:0},{'種|たね':false,'花|はな':true},2,[0,1,2]],'Song progress, tasks, kanji quiz and SRS must survive backup/import merging independently of daily materials');
 console.log('32 lyric annotations, 8 quiz items, official media IDs and song backup regression passed.');

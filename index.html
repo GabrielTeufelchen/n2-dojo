@@ -8,7 +8,66 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-.song-player,.song-course{display:grid;gap:12px}.song-player p,.song-course p{margin:6px 0}.song-local,.song-meaning,.song-test{border-top:1px solid var(--line);padding:16px 0 4px;margin-top:12px}summary{cursor:pointer;line-height:1.7}.song-meaning p{line-height:1.9;margin:14px 0}.song-question{padding:18px 0;border-bottom:1px solid var(--line)}.song-test .opts{display:grid;gap:8px}.song-local input[type=file]{max-width:100%}.song-course select{font:inherit;padding:8px;border-radius:8px}.song-course progress{accent-color:var(--ai)}
+.song-player,.song-course{display:grid;gap:14px}.song-player p,.song-course p{margin:6px 0}.song-local,.song-meaning,.song-test{border-top:1px solid var(--line);padding:16px 0 4px;margin-top:12px}summary{cursor:pointer;line-height:1.7}.song-meaning p{line-height:1.9;margin:14px 0}.song-question{padding:16px 0;border-bottom:1px solid var(--line)}.song-question:last-child{border-bottom:0}.song-test .opts{display:grid;gap:8px}.song-local input[type=file]{max-width:100%}.song-course select{font:inherit;padding:8px;border-radius:8px}.song-course progress{accent-color:var(--ai)}
+/* Enhanced #songs N2 teaching UI */
+.song-sticky-bar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:6;background:color-mix(in srgb,var(--card) 94%,var(--paper));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;box-shadow:0 4px 16px color-mix(in srgb,var(--ink) 7%,transparent)}
+.song-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.song-flow-btn{display:grid;gap:2px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:9px 11px;min-width:0;transition:border-color .15s,background .15s}
+.song-flow-btn:hover{border-color:var(--ai)}
+.song-flow-btn.done{border-color:var(--ok);background:var(--ok-soft)}
+.song-flow-btn small{font-size:11px;color:var(--muted)}
+.song-flow-btn.done small{color:var(--ok);font-weight:700}
+.song-flow-btn b{font-size:13px;line-height:1.3}
+.song-seg{display:flex;flex-wrap:wrap;gap:6px;padding:4px;background:var(--paper);border-radius:9px;border:1px solid var(--line)}
+.song-seg button{flex:1 1 auto;border:0;background:transparent;border-radius:6px;padding:6px 10px;font-size:13px;color:var(--muted);font-weight:500;transition:background .15s,color .15s}
+.song-seg button[aria-selected="true"],.song-seg button.active{background:var(--card);color:var(--ai);font-weight:700;box-shadow:0 1px 3px color-mix(in srgb,var(--ink) 10%,transparent)}
+.song-pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.song-pill{min-width:34px;height:34px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-family:var(--f-mono);font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.song-pill:hover{border-color:var(--ai)}
+.song-pill.done{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.song-pill.active{border-color:var(--ai);background:var(--ai);color:var(--card);font-weight:700}
+.song-n2-grid{display:grid;gap:10px}
+.song-n2-card{border:1px solid var(--line);border-left:3px solid var(--ai);border-radius:8px;background:var(--paper);padding:12px 14px;display:grid;gap:6px}
+.song-n2-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px}
+.song-n2-meta{display:grid;gap:4px;font-size:13px}
+.song-n2-meta .form{font-family:var(--f-mono);font-size:12.5px;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 9px}
+.song-n2-trap{border-left:3px solid var(--mark);background:var(--card);padding:6px 10px;border-radius:0 6px 6px 0;font-size:13px}
+.song-n2-trap b{color:var(--mark-ink);background:var(--mark);border-radius:4px;padding:0 5px;margin-right:6px;font-size:11px}
+.song-kanji-chip{display:inline-flex;align-items:baseline;gap:2px;border:1.5px dashed var(--ai);background:var(--ai-soft);color:var(--ink);border-radius:7px;padding:0 7px;margin:0 2px;font-size:inherit;line-height:1.5;cursor:pointer;vertical-align:baseline}
+.song-kanji-chip.revealed{border-style:solid;border-color:var(--ok);background:var(--ok-soft)}
+.song-kanji-chip .rt-pop{font-size:.55em;color:var(--ok);font-weight:700;margin-left:3px}
+.song-cloze-blank{display:inline-flex;align-items:center;gap:4px;border:1.5px dashed var(--ai);background:var(--mark);color:var(--mark-ink);border-radius:7px;padding:0 10px;margin:0 3px;font-size:.82em;font-weight:700;cursor:pointer;vertical-align:baseline}
+.song-cloze-blank.revealed{border-style:solid;border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.song-blind-wrap{position:relative;padding:14px;border-radius:10px;background:var(--paper);border:1px dashed var(--line)}
+.song-blind-wrap.masked .song-line{filter:blur(10px);user-select:none;pointer-events:none}
+.song-study-grid{display:grid;gap:10px;margin-top:8px;padding:14px;border-radius:10px;background:var(--paper);border:1px solid var(--line)}
+.song-study-row{display:grid;grid-template-columns:5.2em minmax(0,1fr);gap:4px 10px;align-items:baseline;font-size:14px}
+.song-study-row b{color:var(--ai);font-size:12px;letter-spacing:.04em}
+.song-practice-box{border:1px dashed var(--ai);background:var(--card);border-radius:8px;padding:10px 12px;display:grid;gap:8px}
+.song-practice-box input[type=text]{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 10px;background:var(--paper);font-size:14px}
+.song-task-list{display:grid;gap:8px;margin:8px 0 0;padding:0;list-style:none}
+.song-task-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);cursor:pointer;font-size:14px}
+.song-task-item.done{border-color:var(--ok);background:var(--ok-soft)}
+.song-task-item input{margin-top:4px;accent-color:var(--ok)}
+.song-lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:10px}
+.song-lib-card{display:grid;gap:4px;text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:10px 12px}
+.song-lib-card:hover{border-color:var(--ai)}
+.song-lib-card.current{border-color:var(--ai);background:var(--ai-soft)}
+.song-lib-card.passed{border-color:var(--ok)}
+.song-lib-card .t{font-weight:700;font-size:14px;line-height:1.35}
+.song-srs-banner{border:1px solid var(--ai);background:var(--ai-soft);border-radius:var(--r);padding:12px 16px;display:grid;gap:8px}
+.song-mastery-box{border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:14px 16px;display:grid;gap:10px;margin-top:12px}
+.song-mastery-box.passed{border-color:var(--ok);background:var(--ok-soft)}
+.song-check-row{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px}
+.song-scramble-slots{display:flex;flex-wrap:wrap;gap:6px;min-height:44px;padding:10px;border:1.5px dashed var(--ai);border-radius:8px;background:var(--card);align-items:center}
+.song-scramble-pool{display:flex;flex-wrap:wrap;gap:8px}
+.song-vocab-chips{display:flex;flex-wrap:wrap;gap:8px}
+.song-vocab-chip{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;text-align:left;display:inline-grid;gap:2px;font-size:13px}
+.song-vocab-chip:hover{border-color:var(--ai)}
+.side-credits summary{font-size:12px;color:var(--muted)}
+.side-credits p{margin:4px 0 0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+@media (max-width:640px){.song-flow{grid-template-columns:repeat(2,minmax(0,1fr))}.song-study-row{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:860px){.song-sticky-bar{position:static;box-shadow:none}}
 
 /* Layout: 時間割式 — wide screens get a sticky left timetable of the day's subjects; phones get a sticky scrolling tab strip. */
 :root{
@@ -47,7 +106,7 @@ h1,h2,h3{font-family:var(--f-disp);text-wrap:balance;line-height:1.35;margin:0}
 .count span{color:var(--muted);font-size:13px}
 .packbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
 .packbar select{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:5px 8px;max-width:100%}
-.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;display:grid;gap:18px}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;display:grid;gap:18px;max-height:calc(100dvh - 32px);overflow-y:auto;scrollbar-width:thin;padding-right:2px}
 nav.tabs{display:flex;flex-direction:column;gap:2px}
 nav.tabs button{display:grid;grid-template-columns:2.2em 1fr auto;align-items:center;gap:6px;text-align:left;border:0;background:none;padding:9px 10px;border-radius:8px;color:var(--muted)}
 nav.tabs button .k{font-family:var(--f-disp);font-weight:800;color:var(--ink);font-size:17px}
@@ -82,6 +141,10 @@ ruby rt{font-size:.5em;color:var(--muted);font-weight:400}
 body.nofuri ruby rt{visibility:hidden}
 .zh{color:var(--muted);font-size:14px;line-height:1.6}
 body.nozh .zh.hideable{display:none}
+.zh-hidden-hint{display:none;font-size:13px;color:var(--muted)}
+body.nozh .zh-hidden-hint{display:inline-flex;align-items:center;gap:8px}
+.zh.hideable.peek-open{display:block!important}
+.zh-hidden-hint.peek-open{display:none!important}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
 .toolbar label{display:inline-flex;gap:6px;align-items:center}
 .toolbar select{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:3px 6px}
@@ -427,8 +490,12 @@ function qid(q){ return String(q.q)+"｜"+(q.options||[]).join("｜"); }
 function mergeRecord(a={},b={}){
   const r={...b,...a};
   r.listenSec=Math.max(Number(a.listenSec)||0,Number(b.listenSec)||0);
-  for(const k of ["vocab","gram","shadow","learned"]) r[k]=[...new Set([...(a[k]||[]),...(b[k]||[])])];
-  for(const k of ["qs","choices","answered"]) r[k]={...(b[k]||{}),...(a[k]||{})};
+  for(const k of ["vocab","gram","shadow","learned","tasks"]) r[k]=[...new Set([...(a[k]||[]),...(b[k]||[])])];
+  for(const k of ["qs","choices","answered","kanjiQs","notes"]) r[k]={...(b[k]||{}),...(a[k]||{})};
+  if(a.srs||b.srs){
+    const sa=a.srs||{}, sb=b.srs||{};
+    r.srs=(Number(sa.level)||0)>=(Number(sb.level)||0)?{...sb,...sa}:{...sa,...sb};
+  }
   r.arena={...(b.arena||{})}; for(const [k,v] of Object.entries(a.arena||{})) r.arena[k]=Math.max(v,r.arena[k]||0);
   for(const k of ["role","culture","adult"]) r[k]=!!(a[k]||b[k]);
   return r;
@@ -514,6 +581,9 @@ function renderTabs(){
     b.onkeydown=e=>{ if(!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","End"].includes(e.key))return; e.preventDefault(); const bs=[...nav.querySelectorAll('[role="tab"]')]; const i=bs.indexOf(b); const n=e.key==="Home"?0:e.key==="End"?bs.length-1:(i+(["ArrowRight","ArrowDown"].includes(e.key)?1:-1)+bs.length)%bs.length; bs[n].click(); document.getElementById(bs[n].id)?.focus(); };
     b.onclick=()=>go(t.id); nav.append(b); });
   renderSideFoot(); renderStudyPlan();
+  if(window.matchMedia&&window.matchMedia("(max-width:860px)").matches){
+    requestAnimationFrame(()=>document.getElementById("tab-"+tab)?.scrollIntoView({block:"nearest",inline:"center"}));
+  }
 }
 document.addEventListener("change",e=>{ if(e.target&&e.target.id==="adultT"){ lsSet("n2adult",e.target.checked); if(!e.target.checked&&tab==="adult") tab="listen"; rerender(); } });
 function go(id){ stopAll(); if(id!=="arena") game=null; tab=id; lsSet("n2tab",id); history.replaceState(null,"","#"+id); rerender(); window.scrollTo({top:0}); document.getElementById("tab-"+id)?.scrollIntoView({block:"nearest",inline:"nearest"}); }
@@ -527,7 +597,7 @@ function renderSideFoot(){
   <div class="backup-actions"><button class="btn small" id="exportProgress">备份记录</button><button class="btn small" id="importProgress">恢复备份</button><input type="file" id="progressFile" accept="application/json,.json" hidden></div>
   ${IN_CLAUDE?"":`<div><label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="adultT" ${showAdult()?"checked":""}> 显示 18+ 栏目（大人の会話）</label></div>`}
   <div id="audioDiag">音频：${esc(audioDiag.state)}${audioDiag.last?" · "+esc(audioDiag.last):""}</div>
-  ${m?`<div>配音：${(m.credits||[]).map(c=>"VOICEVOX:"+esc(c)).join("、")}</div>`:""}`;
+  ${m&&m.credits?.length?`<details class="side-credits"><summary>配音鸣谢（${m.credits.length} 位声库）</summary><p>${(m.credits||[]).map(c=>"VOICEVOX:"+esc(c)).join("、")}</p></details>`:""}`;
   $("#exportProgress",f).onclick=exportProgress;
   const file=$("#progressFile",f); $("#importProgress",f).onclick=()=>file.click(); file.onchange=()=>importProgress(file.files[0]);
 }
@@ -553,7 +623,8 @@ async function importProgress(file){
     if(p.songs&&(typeof p.songs!=="object"||Array.isArray(p.songs)))throw new Error("歌曲进度格式不正确");
     for(const d of Object.values(p.songs||{})){
       if(!d||typeof d!=="object"||!Array.isArray(d.learned)||!d.learned.every(Number.isInteger))throw new Error("歌曲学习标记格式不正确");
-      for(const k of ["qs","choices"])if(d[k]&&(typeof d[k]!=="object"||Array.isArray(d[k])))throw new Error("歌曲测验格式不正确");
+      for(const k of ["qs","choices","kanjiQs","notes"])if(d[k]&&(typeof d[k]!=="object"||Array.isArray(d[k])))throw new Error("歌曲测验格式不正确");
+      if(d.tasks&&(!Array.isArray(d.tasks)||!d.tasks.every(Number.isInteger)))throw new Error("歌曲听力任务格式不正确");
     }
     if(!p.wrong.every(q=>q&&typeof q.q==="string"&&Array.isArray(q.options)&&Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.options.length))throw new Error("错题格式不正确");
     stopAll(); game=null; store.progress=mergeProgress(store.progress,p); saveProgress(); rerender(); toast("记录已合并，保留现有进度与错题");
@@ -576,6 +647,9 @@ function status(){
   const d=P(), pk=pack();
   const ar=Object.keys(d.arena||{}).length;
   const rq=(pk.reading?.questions||[]).length, rdone=(pk.reading?.questions||[]).filter((_,i)=>`R-${i}` in d.qs).length;
+  const dailySong=(store.songs||[]).length?chooseDailySong(store.songs,currentId||TODAY):null;
+  const sp=dailySong?(store.progress.songs?.[dailySong.lesson?.progressId||dailySong.id]||{learned:[],qs:{},choices:{},tasks:[],kanjiQs:{}}):null;
+  const sm=dailySong&&sp?songMastery(dailySong,sp):null;
   return {
     listen:{done:d.listenSec>=1800, label:`${Math.floor(d.listenSec/60)} / 30 分`},
     read:pk.reading?{done:rq>0&&rdone>=rq, label:`${rdone} / ${rq} 题`}:null,
@@ -583,7 +657,8 @@ function status(){
     speak:{done:(d.shadow||[]).length>=pk.shadow.length&&!!d.role, label:`跟读 ${(d.shadow||[]).length}/${pk.shadow.length}${d.role?" · 角色扮演 ✓":""}`},
     arena:{done:ar>=pk.arena.length, label:`${ar} / ${pk.arena.length} 关`},
     culture:{done:!!d.culture, label:d.culture?"看过":"没看"},
-    adult:{done:!!d.adult, label:d.adult?"看过":"没看"}
+    adult:{done:!!d.adult, label:d.adult?"看过":"没看"},
+    songs:sm?{done:sm.passed, label:sm.passed?"已过关":`${sm.learned}/${sm.totalLines} 句 · ${sm.quizRight}/${sm.totalQuiz} 题`}:null
   };
 }
 function streak(){ let n=0; const d=new Date(today); for(;;){ const k=dayKey(d); const x=store.progress.days[k]; if(x&&(x.listenSec>=1800||Object.keys(x.arena||{}).length>=3||Object.keys(x.answered||{}).length>=5)){n++; d.setDate(d.getDate()-1);} else if(k===TODAY){ d.setDate(d.getDate()-1);} else break; if(n>400)break; } return n; }
@@ -927,130 +1002,1016 @@ function vAdult(v){
   if(!P().adult){ P().adult=true; saveProgress(); renderTabs(); }
 }
 
-/* --- 听歌课：用户提供的段落、官方播放器和本地音频 --- */
-let songAudio=null, songURL=null;
+/* --- 听歌课：JLPT N2 四步过关教学引擎（考点先导 → 听辨原声 → 主动精学 → N2 过关检测 & 抗遗忘）--- */
+let songAudio=null, songURL=null, songHotkeys=null;
 function stopSongAudio(){ if(songAudio)songAudio.pause(); }
-function songProgress(id){ store.progress.songs||={}; return store.progress.songs[id]||={learned:[],qs:{},choices:{}}; }
-function songPlayer(cur){
-  const box=el('section',{class:'panel song-player','aria-label':'歌曲播放'});
-  box.append(el('h3',{},'01 / 先听原声'));
-  if(cur.media){
-    const m=cur.media;
-    const slot=el('div',{'data-song-embed':''});
-    const embed=el('button',{class:'btn small'},'加载官方视频');
-    if(m.preview){
-      const full=el('button',{type:'button',class:'btn small'},'Apple Music · 听整首');
-      full.onclick=()=>{
-        stopSongAudio();
-        const url=new URL(m.preview.source);
-        url.hostname='embed.music.apple.com';
-        url.searchParams.delete('uo');
-        slot.replaceChildren(el('iframe',{src:url.href,title:'Apple Music · '+m.preview.credit,allow:'autoplay *; encrypted-media *; fullscreen *',style:'width:100%;height:175px;border:0'}));
-      };
-      box.append(full,el('p',{class:'small muted'},'已有 Apple Music 订阅可在播放器中登录听整首。免登录可试官方视频，版本见下方。'));
-      const sample=el('audio',{controls:'',preload:'none',src:m.preview.url,style:'width:100%','aria-label':'免登录试听'});
-      sample.onplay=()=>{if(songAudio!==sample)stopSongAudio();slot.replaceChildren();songAudio=sample;};
-      box.append(el('p',{},'免登录试听 · 原声片段'),sample,
-        el('a',{href:m.preview.source,target:'_blank',rel:'noopener',class:'small muted'},esc('Apple Music · '+m.preview.credit)));
-      sample.onerror=()=>{sample.after(el('p',{role:'status'},'试听音源未能加载，可试下方官方视频或本地音频。'));};
-    }
-    embed.onclick=()=>{
-      stopSongAudio();
-      slot.replaceChildren(el('iframe',{src:`https://www.youtube-nocookie.com/embed/${m.youtube}?playsinline=1`,title:m.label,allow:'encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:12px'}));
-      embed.textContent='重新加载官方视频';
-    };
-    box.append(el('p',{class:'small muted'},esc(m.label)),embed,slot);
-    if(!m.preview)embed.onclick();
-  }
-  const local=el('details',{class:'song-local'});local.append(el('summary',{},'导入自己的原唱文件 · A–B 复读'));
-  local.append(el('p',{class:'small muted'},'文件只在当前浏览器内播放，不上传。刷新后需重新选择文件。A、B 由你按实际版本手动标记，不自动对应歌词。'));
-  const input=el('input',{type:'file',accept:'audio/*,video/mp4','aria-label':'选择本地原唱文件'}), status=el('p',{class:'small',role:'status'},'尚未选择音频'), audio=el('audio',{controls:'',preload:'metadata',style:'width:100%','aria-label':'本地原唱播放器'});
-  let a=0,b=null,loop=false;
-  const controls=el('div',{class:'row'}), markA=el('button',{class:'btn small',disabled:''},'标记 A'), markB=el('button',{class:'btn small',disabled:''},'标记 B'), play=el('button',{class:'btn small',disabled:''},'从 A 播放'), clear=el('button',{class:'btn small',disabled:''},'清除区间');
-  const loopLabel=el('label',{class:'small'}), check=el('input',{type:'checkbox',disabled:''});loopLabel.append(check,document.createTextNode(' 循环 A–B'));
-  const rate=el('select',{'aria-label':'原唱播放速度',disabled:''},'<option value="0.75">0.75×</option><option value="0.9">0.9×</option><option value="1" selected>1×</option>');
-  const region=el('p',{class:'small muted',role:'status'});
-  const show=()=>{region.textContent=`A ${a.toFixed(1)} 秒 → B ${b==null?'未设置':b.toFixed(1)+' 秒'}`;};show();
-  markA.onclick=()=>{a=audio.currentTime;if(b!=null&&b<=a){b=null;check.checked=false;loop=false;}show();};
-  markB.onclick=()=>{if(audio.currentTime<=a+0.25){toast('先播放到 A 点之后至少 0.25 秒，再标记 B');return;}b=audio.currentTime;show();};
-  play.onclick=()=>{audio.currentTime=a;audio.play().catch(()=>toast('音频暂时无法播放，请检查文件格式'));};
-  clear.onclick=()=>{a=0;b=null;loop=false;check.checked=false;show();};
-  check.onchange=()=>{if(check.checked&&b==null){check.checked=false;toast('请先标记 B 点');return;}loop=check.checked;};
-  rate.onchange=()=>audio.playbackRate=Number(rate.value);
-  audio.onplay=()=>{if(songAudio!==audio)stopSongAudio();songAudio=audio;box.querySelectorAll('iframe').forEach(x=>x.remove());const button=box.querySelector('button');if(cur.media&&button)button.disabled=false;if(tts.ok)speechSynthesis.cancel();};
-  audio.ontimeupdate=()=>{if(loop&&b!=null&&audio.currentTime>=b)audio.currentTime=a;};
-  audio.onended=()=>{if(loop&&b!=null){audio.currentTime=a;audio.play().catch(()=>{});}};
-  audio.onerror=()=>{status.textContent='这个文件无法播放，请换成 MP3、M4A 或 WAV。';[markA,markB,play,clear,check,rate].forEach(x=>x.disabled=true);};
-  input.onchange=()=>{
-    const file=input.files[0];if(!file)return;stopAll();if(songURL)URL.revokeObjectURL(songURL);
-    songURL=URL.createObjectURL(file);songAudio=audio;audio.src=songURL;a=0;b=null;loop=false;check.checked=false;rate.value='1';show();
-    status.textContent=`已选择：${file.name} · 仅本地播放`;
-    audio.onloadedmetadata=()=>{[markA,markB,play,clear,check,rate].forEach(x=>x.disabled=false);};
-  };
-  controls.append(markA,markB,play,clear,loopLabel,rate);local.append(input,status,audio,controls,region);box.append(local);return box;
+document.addEventListener("keydown",e=>{
+  if(tab!=="songs"||!songHotkeys)return;
+  const tag=(e.target&&e.target.tagName||"").toUpperCase();
+  if(["INPUT","TEXTAREA","SELECT","BUTTON"].includes(tag)||e.metaKey||e.ctrlKey||e.altKey)return;
+  songHotkeys(e);
+});
+function songProgress(id){
+  store.progress.songs||={};
+  const p=store.progress.songs[id]||={learned:[],qs:{},choices:{}};
+  p.learned||=[]; p.qs||={}; p.choices||={}; p.tasks||=[]; p.kanjiQs||={}; p.notes||={};
+  return p;
 }
-function songLesson(cur){
-  const course=cur.lesson,progressId=course.progressId||cur.id,p=songProgress(progressId),box=el('section',{class:'panel song-course','aria-label':'逐句课程'});
-  box.append(el('h3',{},course.kind==='transfer'?'02 / 听懂以后，学会运用':'02 / 一句一句学'),el('p',{class:'small muted'},esc(course.source)));
-  const progress=el('p',{class:'small',role:'status'}), meter=el('progress',{max:course.lines.length,value:(p.learned||[]).length,'aria-label':'逐句学习进度',style:'width:100%'});
-  const refresh=()=>{progress.textContent=`已标记学过 ${p.learned.length} / ${course.lines.length} 句 · 检测答对 ${Object.values(p.qs).filter(Boolean).length} / ${course.quiz.length} 题`;meter.value=p.learned.length;};refresh();box.append(progress,meter);
-  let idx=Math.max(0,Math.min(course.lines.length-1,lsGet('n2songLine:'+progressId,0)||0));
-  const nav=el('div',{class:'row'}),prev=el('button',{class:'btn small'},'← 上一句'),next=el('button',{class:'btn small'},'下一句 →'),pick=el('select',{'aria-label':'选择学习句子',style:'max-width:100%;flex:1;min-width:160px'});
-  course.lines.forEach((line,i)=>pick.append(el('option',{value:i},esc(`${i+1}. ${plain(line.jp)}`))));
-  const card=el('div',{'aria-live':'polite'});
-  function draw(){
-    stopSongAudio();if(tts.ok)speechSynthesis.cancel();lsSet('n2songLine:'+progressId,idx);pick.value=idx;prev.disabled=idx===0;next.disabled=idx===course.lines.length-1;
-    const line=course.lines[idx];card.replaceChildren();
-    card.append(el('p',{class:'eyebrow'},`${course.kind==='transfer'?'原创练习 · ':''}第 ${idx+1} 句 / ${course.lines.length}`),el('p',{class:'ja song-line',style:'font-size:clamp(22px,4vw,34px);line-height:2.3;margin:12px 0;overflow-wrap:anywhere'},rb(line.jp)));
-    const say=el('button',{class:'btn small'},'听日语朗读示范'), meaning=el('details',{class:'song-meaning'});
-    say.onclick=()=>{stopSongAudio();speak(plain(line.jp));};
-    meaning.append(el('summary',{},'Notes'),el('p',{},`<b>${esc(line.zh)}</b>`),el('p',{},`<b>W</b> ${esc(line.chunks)}`),el('p',{},`<b>G</b> ${esc(line.grammar)}`),el('p',{class:'tip'},esc(line.practice)));
-    const learned=el('button',{class:'btn'+(p.learned.includes(idx)?' pri':'')},p.learned.includes(idx)?'✓ 已学过 · 点击取消':'我能解释这句了 · 标记学过');
-    learned.onclick=()=>{if(p.learned.includes(idx))p.learned=p.learned.filter(x=>x!==idx);else p.learned.push(idx);saveProgress();refresh();learned.classList.toggle('pri',p.learned.includes(idx));learned.textContent=p.learned.includes(idx)?'✓ 已学过 · 点击取消':'我能解释这句了 · 标记学过';};
-    card.append(say,el('p',{class:'small muted'},'朗读使用设备日语语音，不是原唱。先听歌曲，再用朗读核对词形。'),meaning,learned);
+function addDaysISO(iso,days){ return new Date(Date.parse(iso+"T00:00:00Z")+days*864e5).toISOString().slice(0,10); }
+const SONG_SRS_OFFSETS=[1,3,7];
+const SONG_N2_HINTS=[
+  {keys:["ておけばよかった","ばよかった"],pat:"〜ておけばよかった",level:"N3→N2 必考",form:"Vて形 + おけばよかった",trap:"表示「早知道提前做就好了」，隐含“当时实际没做”。区分「〜ておく（提前准备）」与单纯的「〜ばよかった」。",signal:"せめて / もっと早く / 後悔"},
+  {keys:["てくれた","てくれる"],pat:"〜てくれる（受惠）",level:"N3→N2 衔接",form:"（对方）が + Vてくれる",trap:"主语一定是「主动帮忙的对方」，受益方是「我/我方」。N2 听解和读解常考“到底谁帮了谁”。",signal:"〜が + 声をかける / 案内する"},
+  {keys:["てもらう","てもらって"],pat:"〜てもらう（获益）",level:"N3→N2 衔接",form:"（我）は +（对方）に + Vてもらう",trap:"主语是「接受帮助的我」。容易和「〜てあげる（我帮别人）」混淆方向，做题先看助词「は/が」与「に」。",signal:"〜に〜てもらう / ほっとする"},
+  {keys:["おかげで"],pat:"〜おかげで（积极原因）",level:"N3→N2 必考",form:"V普通形 / イ形 / ナ形+な / N+の + おかげで",trap:"引出「好结果」并带感谢语气。坏结果用「〜せいで」或 N2「〜ばかりに（偏偏因为…导致坏结果）」。",signal:"間に合った / 合格した / 助かった"},
+  {keys:["せいで"],pat:"〜せいで（消极原因）",level:"N3→N2 必考",form:"V普通形 / イ形 / ナ形+な / N+の + せいで",trap:"引出「坏结果」并带归咎语气。注意接名词必须加「の」，不可直接接名词。",signal:"遅れた / 失敗した / 眠れない"},
+  {keys:["意向形","ようとする","おうとした","ようとした"],pat:"〜（よ）うとする",level:"N3→N2 必考",form:"V意向形 + とする / とした",trap:"表示「正要做某事（还没做成）」或「试图做」。「言った（说了）」≠「言おうとした（正想说却被打断）」。",signal:"〜としたら / 〜としたとき"},
+  {keys:["ことになっている","ということになった"],pat:"〜ことになっている／ことになる",level:"N2 必考",form:"V辞书形 / Vない形 + ことになっている",trap:"「〜ことになっている」是客观规定/既定安排；「〜ことにしている」是个人主观养成的习惯，N2 高频互为干扰项！",signal:"規則 / 決まり / 予定"},
+  {keys:["のあまり"],pat:"〜のあまり（程度过甚）",level:"N2 必考",form:"N+の / V辞书形・た形 / ナ形+な + あまり",trap:"因为感情或状态「过于强烈」而引发非理性或意外结果，后项多为不受控的反应。",signal:"緊張 / 嬉しさ / 驚き"},
+  {keys:["せずに","ないで"],pat:"〜ずに（书面否定伴随）",level:"N2 必考",form:"Vない形去ない + ずに（する→せずに）",trap:"相当于「〜ないで」的书面语，表示「没做前项就做后项」。注意「する」的特殊变形是「せずに」不是「しずに」！",signal:"食べずに / 休まずに / 諦めずに"},
+  {keys:["きる","きった","きれない"],pat:"Vます + きる（彻底完成）",level:"N2 必考",form:"Vます形去ます + きる / きれる / きれない",trap:"表示「彻底做完」或「达到极限」。否定「〜きれない（做不完/数不清）」在 N2 语形成题极高频。",signal:"使いきる / 読みきれない / 言い切る"},
+  {keys:["ところだった"],pat:"〜ところだった（差点儿）",level:"N2 必考",form:"V辞书形 / Vない形 + ところだった",trap:"表示「差一点就发生（但最终没发生）」，前面常呼应「あと少しで」「危うく」。",signal:"あと少しで / 危うく / もう少しで"},
+  {keys:["はともかく"],pat:"〜はともかく（暂且不论）",level:"N2 必考",form:"N + はともかく（として）",trap:"先搁置前项，强调后项才是真正重要的判断点。常与「〜はさておき」互换。",signal:"値段はともかく / 結果はともかく"},
+  {keys:["こそ"],pat:"〜こそ（强调正是）",level:"N2 必考",form:"N / 助词 / Vて形 + こそ",trap:"强强调「正是这个，不是别的」。「〜てこそ」表示“只有做了……才真正……”。",signal:"今度こそ / こちらこそ / やってこそ"},
+  {keys:["はずなのに","はずだ"],pat:"〜はずなのに（理应却未）",level:"N2 必考",form:"普通形（ナ形+な / N+の）+ はずなのに",trap:"按记忆或逻辑「理应如此」，但现实却相反，带惊讶或困惑。区别于「〜わけがない（不可能）」。",signal:"確か / 覚えている / おかしい"},
+  {keys:["を頼りに","頼りに"],pat:"〜を頼りに（依靠线索）",level:"N2 必考",form:"N + を頼りに（して）",trap:"以某人或某线索作为唯一/主要依靠采取行动。类似句型：「〜をもとに（以…为基础）」「〜に沿って（沿着）」。",signal:"地図を頼りに / 記憶を頼りに"},
+  {keys:["とたん"],pat:"〜たとたん（に）（刚一…就）",level:"N2 必考",form:"Vた形 + とたん（に）",trap:"前项刚完成瞬间立刻发生「出乎意料的」后项。后项不能用说话人的意志/命令/请求（区别于「〜次第」）。",signal:"開けたとたん / 立ったとたん"},
+  {keys:["ないように"],pat:"〜ないように（以免/为了不）",level:"N3→N2 衔接",form:"Vない形 + ように",trap:"表示消极目的「为了不发生某事」。注意前面用「ない形」或可能动词，不用意志动词肯定形。",signal:"忘れないように / 遅れないように"},
+  {keys:["ておく"],pat:"〜ておく（提前准备）",level:"N3→N2 衔接",form:"Vて形 + おく（口语缩约：とく）",trap:"为了后续目的提前做完某事，或保持某状态。听力里常缩约成「〜とく／〜どく」，务必听辨！",signal:"あらかじめ / 事前に / 予約しておく"},
+  {keys:["ぶりに"],pat:"时间段 + ぶりに（时隔…）",level:"N3→N2 必考",form:"数量词（时间）+ ぶりに / ぶりの + N",trap:"表示「时隔多久再次做某事」。修饰名词时变为「〜ぶりの」，如「3年ぶりの再会」。",signal:"数年ぶり / 久しぶり"},
+  {keys:["のまま","まま"],pat:"〜まま（保持原状）",level:"N3→N2 必考",form:"Vた形 / Vない形 / N+の / イ形 / ナ形+な + まま",trap:"保持原有状态不变而做另一件事或一直持续。动词肯定必须接「た形」（×着るまま → ○着たまま）。",signal:"あの頃のまま / つけたまま"},
+  {keys:["気がした","気がする"],pat:"〜気がする（总觉得）",level:"N3→N2 衔接",form:"普通形（ナ形+な / N+の）+ 気がする",trap:"表示说话人的主观直觉、模糊印象，并非客观事实。读解/听解题干常以此区分「确定事实」与「个人感觉」。",signal:"なんだか / どこか / ような気がする"},
+  {keys:["につれて"],pat:"〜につれて（随着变化）",level:"N2 必考",form:"V辞书形 / N + につれて",trap:"前后两项同时朝同一方向渐进变化，多为自然趋势，后项一般不用意志/命令表达。",signal:"年をとるにつれて / 時間がたつにつれて"},
+  {keys:["うちに"],pat:"〜うちに（趁着 / 在…期间不知不觉）",level:"N2 必考",form:"V辞书形・ている・ない形 / イ形 / ナ形+な / N+の + うちに",trap:"两大考点：① 趁状态未变前做某事（冷めないうちに）；② 在做前项过程中不知不觉发生了变化（聞いているうちに）。",signal:"今のうちに / 忘れないうちに / いつの間にか"},
+  {keys:["ないことには"],pat:"〜ないことには〜ない（如果不…就不）",level:"N2 必考",form:"Vない形 / イ形くない / ナ形・Nでない + ことには",trap:"后项必然呼应否定/不可能语气，表示「缺了这个前提条件就绝对不行」。",signal:"〜ない / 無理だ / わからない"},
+  {keys:["とは限らない"],pat:"〜とは限らない（未必）",level:"N2 必考",form:"普通形（ナ形・N去だ）+ とは限らない",trap:"部分否定，常与「必ずしも（未必）」「いつも」「みんな」搭配，是 N2 文法形式题的送分信号！",signal:"必ずしも / いつも / 高いからといって"},
+  {keys:["ばかりでなく"],pat:"〜ばかりでなく（不仅…而且）",level:"N2 必考",form:"普通形（ナ形+な / N直接接）+ ばかりでなく",trap:"后项常呼应「〜も」「〜まで」，强调递进范围。注意接名词不加「の」。",signal:"〜も / それだけでなく"},
+  {keys:["げ","誇らしげ"],pat:"〜げ（看起来…的样子）",level:"N2 必考",form:"イ形去い / ナ形词干 / Vたい去い + げ（な/に）",trap:"从外表神情推测他人内心感受（悲しげ、寂しげ、誇らしげ），一般不用于说自己。",signal:"〜げに笑う / 〜げな顔"},
+  {keys:["たがる"],pat:"〜たがる（他人表现出想要）",level:"N3→N2 衔接",form:"Vます形去ます + たがる（五段动词）",trap:"描写观察到的他人愿望（自己想用「〜たい」）。变否定/进行时为「〜たがらない / 〜たがっている」。",signal:"子どもが / 周りの人が"},
+  {keys:["一つとして"],pat:"数量词 + として〜ない（一个也不）",level:"N2 必考",form:"一〜 + として + 否定",trap:"极强全否定，后项必须是否定形，常见于「一つとして〜ない」「一人として〜ない」。",signal:"同じものは一つとしてない"},
+  {keys:["のに"],pat:"〜のに（明明…却）",level:"N3→N2 衔接",form:"普通形（ナ形+な / N+な）+ のに",trap:"带不满、遗憾、意外情绪的逆接，读解里常用来锁定作者真正态度。后项不能用命令/请求。",signal:"せっかく / 頑張ったのに"},
+  {keys:["たびに"],pat:"〜たびに（每当…就）",level:"N2 必考",form:"V辞书形 / N+の + たびに",trap:"每次发生前项都必然重复后项，不用于每天固定例行动作（如×毎朝起きるたびに）。",signal:"会うたびに / この曲を聴くたびに"},
+  {keys:["ものの"],pat:"〜ものの（虽然…但是）",level:"N2 必考",form:"普通形（ナ形+な / N+である）+ ものの",trap:"书面逆接，承认前项事实但后项不如预期。比「のに」更客观理性，常用于文章与新闻。",signal:"買ったものの / 分かってはいるものの"},
+  {keys:["わけではない"],pat:"〜わけではない（并不是）",level:"N2 必考",form:"普通形（ナ形+な / N+の）+ わけではない",trap:"部分否定或委婉否认对方的误解。与「〜わけがない（绝不可能）」含义完全不同，切勿混选！",signal:"決して / 嫌いなわけではない"},
+  {keys:["ばかりに"],pat:"〜ばかりに（偏偏因为）",level:"N2 必考",form:"普通形（ナ形+な / N+である）+ ばかりに",trap:"因为某个单一原因导致「严重的坏结果」，带强烈后悔语气。不可用于好结果（好结果用「おかげで」）。",signal:"うそをついたばかりに / 確認しなかったばかりに"},
+  {keys:["たら"],pat:"〜たら（如果 / 一…就）",level:"N3→N2 衔接",form:"Vた形 + ら",trap:"N2 必分清两种用法：① 假设条件（后句为未发生/打算）；② 既成事实（后句是过去时，表“做完 A 后发现/发生了 B”）。",signal:"今度会えたら / 送ったら返事が来た"},
+  {keys:["ようになる"],pat:"〜ようになる（状态/能力变化）",level:"N3→N2 衔接",form:"V辞书形 / 可能形 / Vない形 + ようになる",trap:"表示自然而然的状态或能力变化（从不会到会、从不做到做）。区分「〜ようにする（主观努力做到）」。",signal:"話せるようになる / 毎日歩くようになる"},
+  {keys:["ことにする"],pat:"〜ことにする（主观决定）",level:"N3→N2 必考",form:"V辞书形 / Vない形 + ことにする",trap:"说话人「自己主动做出的决定」。N2 常与「〜ことになる（客观决定/规定）」成对考查主客观区别！",signal:"今日から〜ことにする / 行くことにした"},
+  {keys:["て以来"],pat:"〜て以来（自从…一直）",level:"N2 必考",form:"Vて形 / N + 以来",trap:"以过去某事件为起点，「一直持续到现在」的状态（只用于过去到现在，不可用于将来或刚发生的瞬间）。",signal:"卒業して以来 / あの日以来ずっと"},
+  {keys:["としても","にしても"],pat:"〜としても／〜にしても（即使假定）",level:"N2 必考",form:"普通形 + としても / にしても",trap:"即使承认/假设前项成立，后项结论也不受影响。常与「たとえ」「仮に」呼应。",signal:"たとえ〜としても / どんな理由があるにしても"},
+  {keys:["ずにはいられない"],pat:"〜ずにはいられない（忍不住）",level:"N2 必考",form:"Vない形去ない + ずにはいられない（する→せずにはいられない）",trap:"情感或生理上「情不自禁、克制不住」地做某事。注意「する」变「せずにはいられない」。",signal:"笑わずにはいられない / 泣かずにはいられない"},
+  {keys:["ことはない"],pat:"〜ことはない（不必）",level:"N2 必考",form:"V辞书形 + ことはない",trap:"表示「完全没有必要做某事（安慰或劝告）」。区分「〜たことはない（从未经历过）」。",signal:"心配することはない / 焦ることはない"},
+  {keys:["をきっかけに"],pat:"〜をきっかけに（以…为契机）",level:"N2 必考",form:"N + をきっかけに（して）",trap:"以某个具体事件为开端，引发了后续长期的新变化或新行动。近义：「〜を契機に」。",signal:"旅行をきっかけに / 出会いをきっかけに"},
+  {keys:["からといって"],pat:"〜からといって〜ない（不能仅凭…就断定）",level:"N2 必考",form:"普通形 + からといって + 否定/未必",trap:"前项给出理由，后项用「〜とは限らない」「〜わけではない」等否定片面结论，N2 文法题超级高频！",signal:"〜とは限らない / 〜わけではない"},
+  {keys:["てたまらない"],pat:"〜てたまらない（…得受不了）",level:"N2 必考",form:"Vて形 / イ形くて / ナ形・Nで + たまらない",trap:"表示说话人自身的强烈感受、欲望或生理痛感（不可直接用于描述他人感受）。近义：「〜てしょうがない」。",signal:"会いたくてたまらない / 嬉しくてたまらない"},
+  {keys:["て初めて"],pat:"〜て初めて（经历后才真正懂得）",level:"N2 必考",form:"Vて形 + 初めて",trap:"「只有经历了前项，才第一次体会到/明白后项」。后项多为认知、领悟或感受动词。",signal:"失って初めて / 一人暮らしをして初めて"},
+  {keys:["ながらも"],pat:"〜ながらも（虽然…却）",level:"N2 必考",form:"Vます形 / イ形 / ナ形词干 / N + ながらも",trap:"同一主体的逆接，表示「尽管处于某种状态，却依然……」。注意动词接「ます形去ます」，不接普通形！",signal:"狭いながらも / 知りながらも"},
+  {keys:["だけでなく"],pat:"〜だけでなく（不但…而且）",level:"N3→N2 衔接",form:"普通形（ナ形+な / N直接接）+ だけでなく",trap:"递进表达，后项常呼应「〜も」。书面升级版为 N2「〜ばかりでなく」「〜のみならず」。",signal:"〜だけでなく〜も"},
+  {keys:["そうだ"],pat:"〜そうだ（样态 vs 传闻）",level:"N3→N2 必考",form:"样态：Vます/形词干+そうだ ｜ 传闻：普通形+そうだ",trap:"N2 必考接续区分！接词干是「看起来快要/好像（目测迹象）」，接普通形是「听说（传闻）」，「いい→よさそうだ」特殊！",signal:"雨が降りそうだ / ニュースによると〜そうだ"},
+  {keys:["ようだ","みたいだ","の様に"],pat:"〜ようだ／〜みたいだ（比喻/推量）",level:"N3→N2 衔接",form:"N+の+ようだ ｜ N+みたいだ（不加の）",trap:"「みたいだ」接名词绝对不加「の」，「ようだ」必须加「の」。两者都可表比喻或主观推测，后者更口语。",signal:"まるで〜ようだ / 〜みたいに"},
+  {keys:["として"],pat:"〜として（作为…立场/身份）",level:"N2 必考",form:"N + として（は / も / の）",trap:"明确身份、资格、立场或名义。常与「〜にとって（对…而言）」对比考查：前者强调角色身份，后者强调评价主体。",signal:"代表として / 留学生として"},
+  {keys:["ために","ため"],pat:"〜ために（目的 vs 原因）",level:"N3→N2 衔接",form:"目的：V辞书形/N+の+ために ｜ 原因：普通形(た形/形)+ため",trap:"前后主语一致且前接意志动词辞书形表「目的」；前接状态/过去时/非意志动词表「原因（书面语）」。",signal:"合格するために / 事故のため"},
+  {keys:["ように言う","ように","ますように"],pat:"〜ように（目的 / 转述要求 / 祈愿）",level:"N3→N2 必考",form:"V辞书形・可能形・ない形 + ように",trap:"三大高频考点：① 接非意志/可能/否定表目的（为了能…）；② 「〜ように言う」间接转述祈使；③ 句末「〜ますように」表祝愿。",signal:"忘れないように / 間に合うように / 幸せになりますように"},
+  {keys:["ても","たとえ"],pat:"（たとえ）〜ても（即使…也）",level:"N3→N2 衔接",form:"Vて形 / イ形くて / ナ形・Nで + も",trap:"让步条件，后项结论不因前项而改变。前常呼应副词「たとえ」「いくら」「どんなに」。",signal:"たとえ〜ても / どんなに〜ても"},
+  {keys:["てほしい"],pat:"〜てほしい（希望别人做）",level:"N3→N2 衔接",form:"（对方）に + Vてほしい / Vないでほしい",trap:"表达「希望对方做/不做某事」。区别于「〜たい（自己想做）」，对象用助词「に」标记。",signal:"わかってほしい / 忘れないでほしい"},
+  {keys:["ほど"],pat:"〜ほど（程度 / 越…越…）",level:"N2 必考",form:"V辞书形 / N + ほど",trap:"两大考点：① 举例说明极高程度（泣きたいほど）；② 「〜ば〜ほど（越…越…）」。注意否定比较「AほどBない（不如A）」。",signal:"〜ば〜ほど / 驚くほど"},
+  {keys:["までに","まで"],pat:"〜までに（截止期限）vs 〜まで（持续到）",level:"N3→N2 必考",form:"时间/V辞书形 + までに（瞬间完成）｜ まで（持续动作）",trap:"「までに」强调在期限前完成一次动作（如提交报告）；「まで」强调状态或动作一直持续到该时间点。",signal:"明日までに提出 / 5時まで待つ"},
+  {keys:["間に"],pat:"〜間に（在…期间发生）vs 〜間（一直）",level:"N3→N2 衔接",form:"Vている / N+の + 間に",trap:"「間に」表示在某时间段内完成了某个瞬间动作；「間（ずっと）」表示整个时间段都在持续。",signal:"寝ている間に / 留守の間に"},
+  {keys:["かもしれない"],pat:"〜かもしれない（也许/可能）",level:"N3→N2 衔接",form:"普通形（ナ形・N去だ）+ かもしれない",trap:"可能性约 50% 的推测。N2 进阶对应高危可能「〜かねない（搞不好会…）」与担忧「〜おそれがある」。",signal:"もしかしたら / ひょっとすると"},
+  {keys:["たことがある"],pat:"〜たことがある（曾经经历）",level:"N3→N2 衔接",form:"Vた形 + ことがある",trap:"表示过去的经验。注意「V辞书形 + ことがある」意思是「有时会…」，两者时态一字之差含义完全不同！",signal:"一度〜たことがある / たまに〜ことがある"},
+  {keys:["たほうがいい"],pat:"〜たほうがいい（建议）",level:"N3→N2 衔接",form:"Vた形 / Vない形 + ほうがいい",trap:"肯定建议接「た形」（○行ったほうがいい），否定劝阻接「ない形」（○行かないほうがいい）。",signal:"早く寝たほうがいい / 無理しないほうがいい"},
+  {keys:["どうであれ"],pat:"〜であれ（无论…都）",level:"N2 必考",form:"疑问词 / N + であれ",trap:"书面让步，相当于「〜でも」。常见「理由が何であれ」「結果がどうであれ」，后项表示结论不变。",signal:"何であれ / どうであれ"},
+  {keys:["だけで","なくてもいい"],pat:"〜だけで（仅凭）/ 〜なくてもいい（不必）",level:"N3→N2 衔接",form:"普通形 + だけで ｜ Vない形去い + くてもいい",trap:"「〜だけで」强调条件门槛低（只需…就足够）；「〜なくてもいい」表示许可/不必，不是禁止（禁止是「〜てはいけない」）。",signal:"見るだけで / 無理しなくてもいい"},
+  {keys:["使役"],pat:"使役形（〜せる／〜させる）",level:"N3→N2 必考",form:"五段あ段+せる / 一段+させる / する→させる / 来る→こさせる",trap:"区分「强制让某人做」与「允许某人做」。对象标记：自动词多用「を」，他动词（句中已有を）必须用「に」！",signal:"花を咲かせる / 子どもに野菜を食べさせる"},
+  {keys:["可能形"],pat:"可能形（能够…）",level:"N3→N2 衔接",form:"五段え段+る / 一段+られる / する→できる / 来る→こられる",trap:"可能动词前面对象常用「が」标记；注意与自发、被动、尊敬同形的「〜られる」在语境中区分！",signal:"飛べる / 読める / 食べられる"},
+  {keys:["ながら"],pat:"〜ながら（一边…一边…）",level:"N3→N2 衔接",form:"Vます形去ます + ながら",trap:"前后必须是「同一主语」同时进行两个动作，且后项才是主要动作。接名词/形容词或带「も」时变为逆接「虽然却」。",signal:"音楽を聴きながら / 歩きながら"},
+  {keys:["意志形"],pat:"意志形＋とする（试图/正要做）",level:"N3→N2 必考",form:"V意志形 + とする",trap:"表示刚要采取行动或反复尝试。「しようとした（正想做）」常暗示后面被打断或没做成。",signal:"〜ようとしたら / 〜ようとしない"},
+  {keys:["ばかり"],pat:"〜ばかり（尽是 / 刚做完）",level:"N3→N2 必考",form:"N/Vて形 + ばかり（尽是）｜ Vた形 + ばかり（刚…）",trap:"接「Vて形/名词」表“老是/净是（多带抱怨）”；接「Vた形」表“主观感觉刚发生不久”。",signal:"泣いてばかり / 買ったばかり"},
+  {keys:["つい"],pat:"つい（不知不觉/不小心）",level:"N2 必考",form:"つい + Vてしまう / Vた",trap:"高频副词！表示原本没打算做，却忍不住或疏忽做了某事，句尾常呼应「〜てしまった」。",signal:"つい忘れてしまった / つい買いすぎた"},
+  {keys:["前に"],pat:"V辞书形 + 前に（在…之前）",level:"N3→N2 衔接",form:"V辞书形 / N+の + 前に",trap:"无论整句是过去还是将来，「前に」前面永远接「辞书形」（×帰った前に → ○帰る前に），N2 读解常考动作先后顺序！",signal:"帰る前に / 寝る前に"},
+  {keys:["続ける"],pat:"Vます + 続ける（持续做）",level:"N3→N2 衔接",form:"Vます形去ます + 続ける",trap:"复合动词高频考点：强调动作不间断持续下去。同类复合动词后缀：「〜始める」「〜終わる」「〜直す（重做）」。",signal:"歩き続ける / 考え続ける"}
+];
+function matchN2Grammar(text){
+  const raw=plain(text||"");
+  const norm=raw.replace(/[〜～・\s]/g,"");
+  let pathMatch=null;
+  const lessons=store.grammarPath?.lessons||[];
+  for(const l of lessons){
+    if(l.kind!=="new")continue;
+    const key=l.title.replace(/（[^）]*）/g,"").replace(/[〜～]/g,"").trim();
+    if(key.length>=2&&norm.includes(key)){ pathMatch=l; break; }
   }
-  prev.onclick=()=>{idx--;draw();};next.onclick=()=>{idx++;draw();};pick.onchange=()=>{idx=Number(pick.value);draw();};nav.append(prev,pick,next);box.append(nav,card);draw();
-  const test=el('details',{class:'song-test'});test.append(el('summary',{},`03 / 不看翻译，做 ${course.quiz.length} 题检查理解`));
-  const quizBody=el('div');
-  function drawQuiz(){quizBody.replaceChildren();course.quiz.forEach((q,i)=>{
-    const item=el('div',{class:'song-question'}), opts=el('div',{class:'opts'});item.append(el('p',{},`<b>${i+1}. ${esc(q.q)}</b>`),opts);
-    const feedback=el('div');q.options.forEach((text,j)=>{const bt=el('button',{class:'opt'},`<span class="n">${j+1}</span><span>${esc(text)}</span>`);bt.onclick=()=>{p.choices[i]=j;p.qs[i]=j===q.answer;if(!p.qs[i])addWrong(q);saveProgress();renderSideFoot();refresh();drawQuiz();};if(i in p.choices){bt.disabled=true;if(j===q.answer)bt.classList.add('right');else if(j===p.choices[i])bt.classList.add('wrong');}opts.append(bt);});
-    if(i in p.choices){feedback.append(expBox(q,p.choices[i]));const again=el('button',{class:'btn small'},'重做这题');again.onclick=()=>{delete p.choices[i];delete p.qs[i];saveProgress();refresh();drawQuiz();};feedback.append(again);}item.append(feedback);quizBody.append(item);
-  });}
-  drawQuiz();test.append(quizBody);box.append(test);return box;
+  const hint=SONG_N2_HINTS.find(h=>h.keys.some(k=>norm.includes(k.replace(/[〜～]/g,""))));
+  if(!pathMatch&&!hint)return null;
+  return {
+    pat:pathMatch?pathMatch.title:hint.pat,
+    level:pathMatch?"N2 每日进阶同步考点":hint.level,
+    form:pathMatch?.form||hint?.form||"",
+    trap:hint?.trap||pathMatch?.note||"",
+    signal:hint?.signal||"",
+    pathDate:pathMatch?.date||null
+  };
+}
+function hashStr(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function seededShuffle(arr,seed){
+  const out=[...arr]; let s=hashStr(String(seed))||1;
+  for(let i=out.length-1;i>0;i--){ s=(Math.imul(s,1664525)+1013904223)>>>0; const j=s%(i+1); [out[i],out[j]]=[out[j],out[i]]; }
+  return out;
+}
+function extractSongKanji(lines){
+  const map=new Map();
+  lines.forEach((line,li)=>{
+    const re=/\{([^|{}]+)\|([^{}]+)\}/g; let m;
+    while((m=re.exec(line.jp))!==null){
+      const kanji=m[1], reading=m[2];
+      if(!/[一-龯々]/.test(kanji)||!/^[ぁ-ゖー]+$/.test(reading))continue;
+      const key=`${kanji}|${reading}`;
+      if(!map.has(key)){
+        const before=plain(line.jp.slice(0,m.index)), after=plain(line.jp.slice(m.index+m[0].length));
+        map.set(key,{key,kanji,reading,lineIdx:li,ctx:`${before}【${kanji}】${after}`,jp:line.jp,zh:line.zh,score:(kanji.length>=2?20:0)+(reading.length>=3?8:reading.length>=2?4:0)});
+      }
+    }
+  });
+  return [...map.values()].sort((a,b)=>b.score-a.score||a.lineIdx-b.lineIdx);
+}
+function makeReadingDistractors(reading,poolReadings,seed){
+  const cand=new Set();
+  const add=x=>{ if(x&&x!==reading&&/^[ぁ-ゖー]{1,10}$/.test(x))cand.add(x); };
+  const voiceMap={"か":"が","が":"か","き":"ぎ","ぎ":"き","く":"ぐ","ぐ":"く","け":"げ","げ":"け","こ":"ご","ご":"こ","さ":"ざ","ざ":"さ","し":"じ","じ":"し","す":"ず","ず":"す","せ":"ぜ","ぜ":"せ","そ":"ぞ","ぞ":"そ","た":"だ","だ":"た","ち":"じ","つ":"づ","て":"で","で":"て","と":"ど","ど":"と","は":"ば","ば":"ぱ","ぱ":"は","ひ":"び","び":"ぴ","ぴ":"ひ","ふ":"ぶ","ぶ":"ぷ","ぷ":"ふ","へ":"べ","べ":"ぺ","ぺ":"へ","ほ":"ぼ","ぼ":"ぽ","ぽ":"ほ"};
+  // 1. Long vowel traps (JLPT N2 classic)
+  if(/う/.test(reading)) add(reading.replace("う",""));
+  if(/い/.test(reading)&&reading.length>=3) add(reading.replace("い",""));
+  if(/[おこごそぞとどのほぼぽもよろ]$/.test(reading)) add(reading+"う");
+  if(/[えけげせぜてでねへべぺめれ]$/.test(reading)) add(reading+"い");
+  if(/[うくぐすずつづぬふぶぷむゆる]$/.test(reading)&&!/う$/.test(reading)) add(reading+"う");
+  if(/ゅう/.test(reading)) add(reading.replace("ゅう","ゅ"));
+  if(/ょう/.test(reading)) add(reading.replace("ょう","ょ"));
+  if(/ょ(?!う)/.test(reading)) add(reading.replace("ょ","ょう"));
+  if(/ゅ(?!う)/.test(reading)) add(reading.replace("ゅ","ゅう"));
+  // 2. Dakuten / handakuten traps
+  for(let i=0;i<reading.length;i++){
+    if(voiceMap[reading[i]]) add(reading.slice(0,i)+voiceMap[reading[i]]+reading.slice(i+1));
+  }
+  // 3. Geminate っ traps
+  if(reading.includes("っ")) add(reading.replace("っ",""));
+  else if(reading.length>=2&&/[かきくけこさしすせそたちつてとぱぴぷぺぽ]/.test(reading[1])) add(reading[0]+"っ"+reading.slice(1));
+  // 4. Mora swap / nasal ん trap
+  if(reading.includes("ん")) add(reading.replace("ん",""));
+  else if(reading.length>=2) add(reading[0]+"ん"+reading.slice(1));
+  const picked=seededShuffle([...cand],seed).slice(0,3);
+  if(picked.length<3){
+    const extras=seededShuffle(poolReadings.filter(r=>r!==reading&&!picked.includes(r)),seed+"-p");
+    for(const r of extras){ if(picked.length>=3)break; picked.push(r); }
+  }
+  const fallback=["かん","こう","しん","せい","しょう","ちょう","ない","らい","まい","かい"];
+  for(const f of fallback){ if(picked.length>=3)break; if(f!==reading&&!picked.includes(f))picked.push(f); }
+  return picked.slice(0,3);
+}
+function buildKanjiQuiz(cur){
+  const tokens=extractSongKanji(cur.lesson?.lines||[]);
+  const chosen=tokens.slice(0,6);
+  const allR=tokens.map(t=>t.reading);
+  return chosen.map(t=>{
+    const dist=makeReadingDistractors(t.reading,allR,cur.id+"|"+t.key);
+    const options=seededShuffle([t.reading,...dist],cur.id+"|opt|"+t.key);
+    const answer=options.indexOf(t.reading);
+    return {
+      key:t.key, kanji:t.kanji, reading:t.reading, lineIdx:t.lineIdx, jp:t.jp, zh:t.zh,
+      q:`${t.ctx}`,
+      options, answer,
+      explain:`「${t.kanji}」在这里读作「${t.reading}」。整句意思：${t.zh}`,
+      why:options.map((o,i)=>i===answer?`✓ 正确读音：${t.kanji}（${t.reading}）。`:`混淆读音（注意长音、浊音、促音或拨音）。`),
+      point:`结合语境记忆「${t.kanji}＝${t.reading}」，出声跟读两遍。`,
+      from:`歌曲读音 · ${plain(cur.title)}`
+    };
+  });
+}
+function buildClozeTarget(line){
+  const text=plain(line.jp);
+  // Try matching grammar or chunk keywords inside the sentence
+  const hints=[];
+  const addHint=s=>{ if(s&&s.length>=2&&s.length<=Math.max(4,Math.floor(text.length*0.55))&&text.includes(s))hints.push(s); };
+  const gramParts=plain(line.grammar||"").match(/[ぁ-ゖァ-ヺ一-龯々]{2,10}/g)||[];
+  const chunkParts=plain(line.chunks||"").match(/[ぁ-ゖァ-ヺ一-龯々]{2,10}/g)||[];
+  for(const w of gramParts) addHint(w);
+  for(const w of chunkParts) addHint(w);
+  // Prioritize matches that are grammar-like or kanji compounds
+  if(hints.length){
+    hints.sort((a,b)=>b.length-a.length);
+    return hints[0];
+  }
+  const tokens=[...line.jp.matchAll(/\{([^|{}]+)\|([^{}]+)\}/g)].map(m=>m[1]).sort((a,b)=>b.length-a.length);
+  if(tokens[0]&&text.includes(tokens[0]))return tokens[0];
+  const mid=Math.floor(text.length/3);
+  return text.slice(mid,Math.min(text.length-1,mid+4));
+}
+function splitSentenceChunks(jp){
+  const s=plain(jp).replace(/[。！？?!]$/,"").trim();
+  if(s.length<8)return [s];
+  // Split at commas and natural Japanese particle boundaries
+  const raw=s.split(/(?<=[、,はがをにでとへもやからまでけどのにたらば])/).filter(Boolean);
+  const chunks=[];
+  for(const part of raw){
+    if(chunks.length&&chunks[chunks.length-1].length<3) chunks[chunks.length-1]+=part;
+    else chunks.push(part);
+  }
+  while(chunks.length>4){
+    let best=0, bestLen=999;
+    for(let i=0;i<chunks.length-1;i++){
+      const len=chunks[i].length+chunks[i+1].length;
+      if(len<bestLen){ bestLen=len; best=i; }
+    }
+    chunks.splice(best,2,chunks[best]+chunks[best+1]);
+  }
+  if(chunks.length<3&&s.length>=9){
+    const n=4, step=Math.ceil(s.length/n), forced=[];
+    for(let i=0;i<s.length;i+=step) forced.push(s.slice(i,i+step));
+    return forced.filter(Boolean);
+  }
+  return chunks;
+}
+function songMastery(cur,p){
+  const lines=cur.lesson?.lines||[], quiz=cur.lesson?.quiz||[];
+  const totalLines=lines.length, learned=(p.learned||[]).length;
+  const lineTarget=totalLines>12?Math.min(totalLines,6):Math.ceil(totalLines*0.8);
+  const totalQuiz=quiz.length, quizRight=quiz.filter((_,i)=>p.qs?.[i]===true).length;
+  const quizTarget=Math.ceil(totalQuiz*0.8);
+  const kPool=buildKanjiQuiz(cur), kanjiTotal=kPool.length, kanjiRight=kPool.filter(k=>p.kanjiQs?.[k.key]===true).length;
+  const kanjiTarget=kanjiTotal?Math.ceil(kanjiTotal*0.8):0;
+  const tasks=(cur.listeningTasks?.length?cur.listeningTasks:cur.tips||[]);
+  const tasksDone=(p.tasks||[]).filter(i=>i>=0&&i<tasks.length).length;
+  const linesOk=totalLines>0&&learned>=lineTarget;
+  const quizOk=totalQuiz>0&&quizRight>=quizTarget;
+  const kanjiOk=kanjiTotal===0||kanjiRight>=kanjiTarget;
+  const passed=linesOk&&quizOk&&kanjiOk;
+  const srs=p.srs||null;
+  const due=!!(srs&&srs.next&&srs.next<=TODAY);
+  const mastered=!!(srs&&srs.level>=4);
+  return {totalLines,learned,lineTarget,linesOk,totalQuiz,quizRight,quizTarget,quizOk,kanjiTotal,kanjiRight,kanjiTarget,kanjiOk,tasksTotal:tasks.length,tasksDone,passed,srs,due,mastered};
+}
+function ensureSongSRS(cur,p){
+  const m=songMastery(cur,p);
+  if(m.passed&&!p.srs){
+    p.srs={level:1,last:TODAY,next:addDaysISO(TODAY,SONG_SRS_OFFSETS[0])};
+    saveProgress();
+  }
+  return songMastery(cur,p);
+}
+function songPlayer(cur,progressId,p,onTaskChange){
+  const box=el('section',{class:'panel song-player',id:'song-step-listen','aria-label':'歌曲播放与听力任务'});
+  box.append(el('div',{class:'h2row'},`<div><div class="eyebrow">Step 02 · 听辨原声</div><h3>先听原声，再带着任务打卡</h3></div><span class="small muted">${esc(cur.media?.label||'官方音源')}</span>`));
+  const modes=[];
+  if(cur.media?.preview){
+    modes.push({id:'preview',label:'30 秒试听'});
+    modes.push({id:'apple',label:'Apple Music 整首'});
+  }
+  if(cur.media?.youtube) modes.push({id:'mv',label:'官方 MV'});
+  modes.push({id:'local',label:'本地 A–B 复读'});
+  let activeMode=modes[0].id;
+  const seg=el('div',{class:'song-seg',role:'tablist','aria-label':'选择音源'});
+  const stage=el('div',{style:'display:grid;gap:10px'});
+  function renderAudioStage(){
+    stopSongAudio();
+    stage.replaceChildren();
+    seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.mode===activeMode)));
+    if(activeMode==='preview'&&cur.media?.preview){
+      const m=cur.media.preview;
+      const sample=el('audio',{controls:'',preload:'metadata',src:m.url,style:'width:100%','aria-label':'免登录试听'});
+      sample.onplay=()=>{if(songAudio!==sample)stopSongAudio();songAudio=sample;if(tts.ok)speechSynthesis.cancel();};
+      sample.onerror=()=>{sample.after(el('p',{role:'status',class:'small muted'},'试听音源暂时未能加载，可切换「官方 MV」或「本地 A–B 复读」。'));};
+      stage.append(sample,el('div',{class:'row',style:'justify-content:space-between'},`<span class="small muted">免登录原声片段 · 先抓旋律和关键词</span><a href="${esc(m.source)}" target="_blank" rel="noopener" class="link">在 Apple Music 打开 ↗</a>`));
+    }else if(activeMode==='apple'&&cur.media?.preview){
+      const m=cur.media.preview;
+      const url=new URL(m.source); url.hostname='embed.music.apple.com'; url.searchParams.delete('uo');
+      stage.append(el('iframe',{src:url.href,title:'Apple Music · '+m.credit,allow:'autoplay *; encrypted-media *; fullscreen *',style:'width:100%;height:175px;border:0;border-radius:10px'}),el('p',{class:'small muted'},'已有 Apple Music 订阅可在播放器内登录听完整版。'));
+    }else if(activeMode==='mv'&&cur.media?.youtube){
+      const m=cur.media;
+      const slot=el('div'), loadBtn=el('button',{type:'button',class:'btn pri small'},'▶ 点击加载官方 MV');
+      const mount=()=>{ stopSongAudio(); slot.replaceChildren(el('iframe',{src:`https://www.youtube-nocookie.com/embed/${m.youtube}?playsinline=1`,title:m.label,allow:'encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:10px'})); loadBtn.textContent='重新加载官方 MV'; };
+      loadBtn.onclick=mount;
+      stage.append(el('div',{class:'row',style:'justify-content:space-between'},`<span class="small muted">${esc(m.label)}</span>`),loadBtn,slot);
+      if(!cur.media.preview) mount();
+    }else{
+      const wrap=el('div',{style:'display:grid;gap:10px'});
+      wrap.append(el('p',{class:'small muted'},'导入本地原唱文件（MP3/M4A/WAV）进行慢速与 A–B 复读。文件只在浏览器本地播放，不上传。'));
+      const input=el('input',{type:'file',accept:'audio/*,video/mp4','aria-label':'选择本地原唱文件'}), status=el('p',{class:'small',role:'status'},'尚未选择本地音频'), audio=el('audio',{controls:'',preload:'metadata',style:'width:100%','aria-label':'本地原唱播放器'});
+      let a=0,b=null,loop=false;
+      const controls=el('div',{class:'row'}), markA=el('button',{type:'button',class:'btn small',disabled:''},'标记 A'), markB=el('button',{type:'button',class:'btn small',disabled:''},'标记 B'), play=el('button',{type:'button',class:'btn small',disabled:''},'从 A 播放'), clear=el('button',{type:'button',class:'btn small',disabled:''},'清除区间');
+      const loopLabel=el('label',{class:'small'}), check=el('input',{type:'checkbox',disabled:''}); loopLabel.append(check,document.createTextNode(' 循环 A–B'));
+      const rate=el('select',{'aria-label':'原唱播放速度',disabled:''},'<option value="0.6">0.6× 精听</option><option value="0.75">0.75× 慢速</option><option value="0.9">0.9×</option><option value="1" selected>1.0× 原速</option>');
+      const region=el('p',{class:'small muted',role:'status'});
+      const show=()=>{region.textContent=`复读区间：A ${a.toFixed(1)} 秒 → B ${b==null?'未设置':b.toFixed(1)+' 秒'}`;}; show();
+      markA.onclick=()=>{a=audio.currentTime;if(b!=null&&b<=a){b=null;check.checked=false;loop=false;}show();};
+      markB.onclick=()=>{if(audio.currentTime<=a+0.25){toast('先播放到 A 点之后至少 0.25 秒，再标记 B');return;}b=audio.currentTime;show();};
+      play.onclick=()=>{audio.currentTime=a;audio.play().catch(()=>toast('音频暂时无法播放，请检查文件格式'));};
+      clear.onclick=()=>{a=0;b=null;loop=false;check.checked=false;show();};
+      check.onchange=()=>{if(check.checked&&b==null){check.checked=false;toast('请先标记 B 点');return;}loop=check.checked;};
+      rate.onchange=()=>audio.playbackRate=Number(rate.value);
+      audio.onplay=()=>{if(songAudio!==audio)stopSongAudio();songAudio=audio;if(tts.ok)speechSynthesis.cancel();};
+      audio.ontimeupdate=()=>{if(loop&&b!=null&&audio.currentTime>=b)audio.currentTime=a;};
+      audio.onended=()=>{if(loop&&b!=null){audio.currentTime=a;audio.play().catch(()=>{});}};
+      audio.onerror=()=>{status.textContent='这个文件无法播放，请换成 MP3、M4A 或 WAV。';[markA,markB,play,clear,check,rate].forEach(x=>x.disabled=true);};
+      input.onchange=()=>{
+        const file=input.files[0];if(!file)return;stopAll();if(songURL)URL.revokeObjectURL(songURL);
+        songURL=URL.createObjectURL(file);songAudio=audio;audio.src=songURL;a=0;b=null;loop=false;check.checked=false;rate.value='1';show();
+        status.textContent=`已加载：${file.name} · 仅本地播放`;
+        audio.onloadedmetadata=()=>{[markA,markB,play,clear,check,rate].forEach(x=>x.disabled=false);};
+      };
+      controls.append(markA,markB,play,clear,loopLabel,rate);
+      wrap.append(input,status,audio,controls,region);
+      stage.append(wrap);
+    }
+  }
+  modes.forEach(m=>{
+    const bt=el('button',{type:'button',role:'tab','data-mode':m.id,'aria-selected':String(m.id===activeMode)},m.label);
+    bt.onclick=()=>{activeMode=m.id;renderAudioStage();};
+    seg.append(bt);
+  });
+  box.append(seg,stage);
+  renderAudioStage();
+  const tasks=cur.listeningTasks?.length?cur.listeningTasks:(cur.tips||[]);
+  if(tasks.length){
+    const tHead=el('div',{class:'row',style:'justify-content:space-between;border-top:1px solid var(--line);padding-top:12px'},`<b>带着任务听三遍（听完打勾）</b><span class="small muted" data-task-count></span>`);
+    const ul=el('ul',{class:'song-task-list'});
+    const syncTasks=()=>{
+      const done=(p.tasks||[]).filter(i=>i>=0&&i<tasks.length).length;
+      const cnt=$('[data-task-count]',tHead); if(cnt)cnt.textContent=`已完成 ${done} / ${tasks.length}`;
+    };
+    tasks.forEach((task,ti)=>{
+      const li=el('li',{});
+      const done=(p.tasks||[]).includes(ti);
+      const label=el('label',{class:'song-task-item'+(done?' done':'')});
+      const cb=el('input',{type:'checkbox'}); cb.checked=done;
+      cb.onchange=()=>{
+        if(cb.checked){ if(!p.tasks.includes(ti))p.tasks.push(ti); }
+        else p.tasks=p.tasks.filter(x=>x!==ti);
+        label.classList.toggle('done',cb.checked);
+        saveProgress(); syncTasks(); onTaskChange&&onTaskChange();
+      };
+      label.append(cb,el('span',{},`<b>第 ${ti+1} 遍：</b>${esc(task)}`));
+      li.append(label); ul.append(li);
+    });
+    syncTasks();
+    box.append(tHead,ul);
+  }
+  return box;
+}
+function songN2Primer(cur,onJumpLine){
+  const box=el('section',{class:'panel',id:'song-step-primer',style:'display:grid;gap:14px','aria-label':'今日 N2 考点先导'});
+  box.append(el('div',{class:'h2row'},`<div><div class="eyebrow">Step 01 · 先懂考点再听歌（目标：JLPT N2 提分）</div><h3 style="font-size:24px">${rb(cur.title)}</h3><div class="small muted">${esc(cur.artist)} · ${esc(cur.year)} · ${esc(cur.level)}</div></div><span class="chip">${cur.lesson?.kind==='transfer'?'N3→N2 迁移课':'歌词精读课'}</span>`));
+  box.append(el('p',{style:'margin:0'},esc(cur.about)));
+  if(cur.goals?.length){
+    box.append(el('div',{},`<b>本课 3 个过关目标</b><ul class="notes" style="margin-top:6px">${cur.goals.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`));
+  }
+  if(cur.grammar?.length){
+    const gWrap=el('div',{class:'song-n2-grid'});
+    gWrap.append(el('b',{},`核心语法与考场防踩坑（共 ${cur.grammar.length} 点 · 先看透接续和易混点）`));
+    cur.grammar.forEach((g,gi)=>{
+      const info=matchN2Grammar(g);
+      const card=el('div',{class:'song-n2-card'});
+      const headRow=el('div',{class:'song-n2-head'},`<div><b>${gi+1}. ${rb(g)}</b></div><div class="row" style="gap:6px">${info?`<span class="chip">${esc(info.level)}</span>`:''}</div>`);
+      let targetLine=-1;
+      if(cur.lesson?.lines?.length){
+        if(cur.lesson.kind==='transfer'&&gi<cur.lesson.lines.length) targetLine=gi;
+        else{
+          const kw=(plain(g).match(/[ぁ-ゖァ-ヺ一-龯々]{2,8}/g)||[]).sort((a,b)=>b.length-a.length)[0];
+          if(kw) targetLine=cur.lesson.lines.findIndex(l=>plain(l.jp).includes(kw)||plain(l.grammar).includes(kw));
+        }
+      }
+      if(targetLine>=0){
+        const jmp=el('button',{type:'button',class:'btn small'},`去第 ${targetLine+1} 句精练 →`);
+        jmp.onclick=()=>onJumpLine&&onJumpLine(targetLine);
+        $('.row',headRow).append(jmp);
+      }
+      card.append(headRow);
+      if(info){
+        const meta=el('div',{class:'song-n2-meta'});
+        if(info.form) meta.append(el('div',{class:'form'},`接续：${esc(info.form)}`));
+        if(info.trap) meta.append(el('div',{class:'song-n2-trap'},`<b>考场防踩坑</b>${esc(info.trap)}${info.signal?`（信号词：${esc(info.signal)}）`:''}`));
+        if(info.pathDate){
+          const goPath=el('button',{type:'button',class:'btn small',style:'justify-self:start'},`在「每日进阶」深化「${esc(info.pat)}」→`);
+          goPath.onclick=()=>{ lsSet('n2grammarPathDate:'+TODAY,info.pathDate); go('path'); };
+          meta.append(goPath);
+        }
+        card.append(meta);
+      }
+      gWrap.append(card);
+    });
+    box.append(gWrap);
+  }
+  // Clickable key vocab + high-value kanji compounds from the song
+  const secWords=(cur.sections||[]).flatMap(s=>s.words||[]);
+  const kanjiTop=extractSongKanji(cur.lesson?.lines||[]).slice(0,8);
+  if(secWords.length||kanjiTop.length){
+    const vDet=el('details',{class:'fold',open:secWords.length<=8});
+    vDet.append(el('summary',{},`重点词汇 & 汉字读音热身（点击直接听发音 · 专攻汉字读音短板）`));
+    const chips=el('div',{class:'song-vocab-chips',style:'margin-top:8px'});
+    secWords.slice(0,16).forEach(w=>{
+      const b=el('button',{type:'button',class:'song-vocab-chip'},`<span class="ja" style="font-size:16px;line-height:1.5">${rb(w.w)}</span><span class="small muted">${esc(w.zh)}</span>`);
+      b.onclick=()=>{ stopSongAudio(); speak(plain(w.w)); };
+      chips.append(b);
+    });
+    if(!secWords.length){
+      kanjiTop.forEach(k=>{
+        const b=el('button',{type:'button',class:'song-vocab-chip'},`<span class="ja" style="font-size:16px;line-height:1.5"><ruby>${esc(k.kanji)}<rt>${esc(k.reading)}</rt></ruby></span><span class="small muted">第 ${k.lineIdx+1} 句高频汉字</span>`);
+        b.onclick=()=>{ stopSongAudio(); speak(k.reading); };
+        chips.append(b);
+      });
+    }
+    vDet.append(chips);
+    if((cur.sections||[]).length>1){
+      const allSec=el('div',{class:'songsecs',style:'margin-top:12px'});
+      cur.sections.forEach(sec=>allSec.append(el('div',{class:'songsec'},`<div class="ss-l"><div class="eyebrow">${rb(sec.h)}</div><p>${esc(sec.sum)}</p></div><div class="ss-r">${(sec.words||[]).map(w=>`<div class="sw"><b class="ja">${rb(w.w)}</b><span>${rb(w.zh)}</span></div>`).join('')}</div>`)));
+      vDet.append(allSec);
+    }
+    box.append(vDet);
+  }
+  return box;
+}
+function songLesson(cur,onProgressChange,isSecondary=false){
+  const course=cur.lesson, progressId=course.progressId||cur.id, p=songProgress(progressId);
+  const wrap=el('div',{style:'display:grid;gap:20px'});
+  const box=el('section',{class:'panel song-course',id:isSecondary?'':'song-step-study','aria-label':'主动精学逐句课程'});
+  box.append(el('div',{class:'h2row'},`<div><div class="eyebrow">Step 03 · 主动精学（拆句 · 考汉字 · 挖空回忆 · 盲听跟读）</div><h3>${course.kind==='transfer'?'听懂以后，学会 N2 迁移运用':'一句一句精学'}</h3></div><span class="small muted">${esc(course.source)}</span>`));
+  const progress=el('p',{class:'small',role:'status'}), meter=el('progress',{max:course.lines.length,value:(p.learned||[]).length,'aria-label':'逐句学习进度',style:'width:100%'});
+  box.append(progress,meter);
+
+  let idx=Math.max(0,Math.min(course.lines.length-1,lsGet('n2songLine:'+progressId,0)||0));
+  let studyMode=lsGet('n2songStudyMode','study'); // study | kanji | cloze | blind
+  let onlyUnlearned=false;
+
+  // Mode selector
+  const modeBar=el('div',{class:'song-seg',role:'tablist','aria-label':'切换练习模式'});
+  const MODES=[
+    {id:'study',label:'① 精讲拆解'},
+    {id:'kanji',label:'② 遮音考汉字（攻短板）'},
+    {id:'cloze',label:'③ 语法挖空回忆'},
+    {id:'blind',label:'④ 盲听跟读'}
+  ];
+  MODES.forEach(m=>{
+    const bt=el('button',{type:'button',role:'tab','data-sm':m.id,'aria-selected':String(studyMode===m.id)},m.label);
+    bt.onclick=()=>{ studyMode=m.id; lsSet('n2songStudyMode',studyMode); draw(); };
+    modeBar.append(bt);
+  });
+  box.append(modeBar);
+
+  // Sentence navigator: visual pills for <=12 lines, compact select + unlearned filter for long lyric lessons
+  const navArea=el('div',{style:'display:grid;gap:8px'});
+  const navRow=el('div',{class:'row'}), prev=el('button',{type:'button',class:'btn small'},'← 上一句'), next=el('button',{type:'button',class:'btn small'},'下一句 →');
+  const pick=el('select',{'aria-label':'选择学习句子',style:'max-width:100%;flex:1;min-width:160px'});
+  const pills=el('div',{class:'song-pills','aria-label':'句子进度切换'});
+  const filterBtn=course.lines.length>12?el('button',{type:'button',class:'btn small'},'只看未学'):null;
+  if(filterBtn){
+    filterBtn.onclick=()=>{ onlyUnlearned=!onlyUnlearned; filterBtn.classList.toggle('pri',onlyUnlearned); renderNav(); };
+  }
+  function renderNav(){
+    prev.disabled=idx===0; next.disabled=idx===course.lines.length-1;
+    if(course.lines.length<=12){
+      pills.replaceChildren();
+      course.lines.forEach((_,i)=>{
+        const done=p.learned.includes(i);
+        const bt=el('button',{type:'button',class:'song-pill'+(done?' done':'')+(i===idx?' active':''),'aria-label':`第 ${i+1} 句${done?'（已学）':''}`},`${i+1}${done?'✓':''}`);
+        bt.onclick=()=>{idx=i;draw();};
+        pills.append(bt);
+      });
+    }else{
+      pick.replaceChildren();
+      course.lines.forEach((line,i)=>{
+        const done=p.learned.includes(i);
+        if(onlyUnlearned&&done&&i!==idx)return;
+        pick.append(el('option',{value:i},esc(`${done?'✓ ':''}${i+1}. ${plain(line.jp)}`)));
+      });
+      pick.value=String(idx);
+    }
+  }
+  prev.onclick=()=>{if(idx>0){idx--;draw();}};
+  next.onclick=()=>{if(idx<course.lines.length-1){idx++;draw();}};
+  pick.onchange=()=>{idx=Number(pick.value);draw();};
+  if(course.lines.length<=12){ navRow.append(prev,pills,next); }
+  else { navRow.append(prev,pick,next,filterBtn); }
+  navArea.append(navRow);
+  box.append(navArea);
+
+  const card=el('div',{'aria-live':'polite',style:'display:grid;gap:12px'});
+  box.append(card);
+
+  const examBox=el('section',{class:'panel song-course',id:isSecondary?'':'song-step-exam','aria-label':'JLPT N2 过关检测'});
+  const kanjiPool=buildKanjiQuiz(cur);
+  let examTab='quiz'; // quiz | kanji | extra
+
+  function refreshAll(){
+    const m=ensureSongSRS(cur,p);
+    progress.textContent=`精学 ${m.learned} / ${m.totalLines} 句 · 理解检测 ${m.quizRight} / ${m.totalQuiz} 题${m.kanjiTotal?` · 汉字读音 ${m.kanjiRight} / ${m.kanjiTotal} 题`:''}${m.passed?' · 🏆 已达过关线':''}`;
+    meter.value=m.learned;
+    renderNav();
+    renderMasteryBox();
+    renderTabs();
+    onProgressChange&&onProgressChange();
+  }
+
+  function renderKanjiInteractive(jp){
+    const frag=document.createDocumentFragment();
+    const re=/\{([^|{}]+)\|([^{}]+)\}/g; let last=0, m;
+    while((m=re.exec(jp))!==null){
+      if(m.index>last) frag.append(document.createTextNode(jp.slice(last,m.index)));
+      const kanji=m[1], reading=m[2];
+      const bt=el('button',{type:'button',class:'song-kanji-chip','data-kanji-chip':''},`<span>${esc(kanji)}</span><span class="rt-pop" hidden>${esc(reading)}</span>`);
+      bt.onclick=()=>{
+        const pop=$('.rt-pop',bt), rev=bt.classList.toggle('revealed');
+        pop.hidden=!rev;
+        stopSongAudio(); speak(reading);
+      };
+      frag.append(bt);
+      last=m.index+m[0].length;
+    }
+    if(last<jp.length) frag.append(document.createTextNode(jp.slice(last)));
+    return frag;
+  }
+
+  function draw(){
+    stopSongAudio(); if(tts.ok)speechSynthesis.cancel();
+    lsSet('n2songLine:'+progressId,idx);
+    modeBar.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.sm===studyMode)));
+    renderNav();
+    const line=course.lines[idx], done=p.learned.includes(idx);
+    const gramInfo=matchN2Grammar((line.grammar||'')+' '+plain(line.jp));
+    card.replaceChildren();
+
+    card.append(el('div',{class:'row',style:'justify-content:space-between'},`<span class="eyebrow">${course.kind==='transfer'?'原创迁移练习（非歌词） · ':''}第 ${idx+1} 句 / ${course.lines.length}</span>${done?'<span class="chip ok">✓ 已标记掌握</span>':'<span class="small muted">快捷键：← / → 切句 · R 朗读 · M 标记已学</span>'}`));
+
+    // Sentence display according to studyMode
+    if(studyMode==='study'){
+      const pLine=el('p',{class:'ja song-line',style:'font-size:clamp(22px,3.6vw,32px);line-height:2.25;margin:4px 0;overflow-wrap:anywhere'},rb(line.jp));
+      sayable(pLine,line.jp,null,{before:stopSongAudio});
+      card.append(pLine);
+    }else if(studyMode==='kanji'){
+      const pLine=el('p',{class:'ja song-line',style:'font-size:clamp(22px,3.6vw,32px);line-height:2.25;margin:4px 0;overflow-wrap:anywhere'});
+      pLine.append(renderKanjiInteractive(line.jp));
+      const hintRow=el('div',{class:'row'},`<span class="small muted">先自己读出带框汉字，再点击汉字揭晓读音并听发音：</span>`);
+      const showAll=el('button',{type:'button',class:'btn small'},'全部显示读音');
+      const hideAll=el('button',{type:'button',class:'btn small'},'重新遮盖');
+      showAll.onclick=()=>pLine.querySelectorAll('[data-kanji-chip]').forEach(c=>{c.classList.add('revealed');$('.rt-pop',c).hidden=false;});
+      hideAll.onclick=()=>pLine.querySelectorAll('[data-kanji-chip]').forEach(c=>{c.classList.remove('revealed');$('.rt-pop',c).hidden=true;});
+      hintRow.append(showAll,hideAll);
+      card.append(hintRow,pLine);
+    }else if(studyMode==='cloze'){
+      const target=buildClozeTarget(line), fullPlain=plain(line.jp);
+      const pos=fullPlain.indexOf(target);
+      const pLine=el('p',{class:'ja song-line',style:'font-size:clamp(22px,3.6vw,32px);line-height:2.25;margin:4px 0;overflow-wrap:anywhere'});
+      if(pos>=0){
+        pLine.append(document.createTextNode(fullPlain.slice(0,pos)));
+        const blank=el('button',{type:'button',class:'song-cloze-blank'},'？ 点击核对');
+        blank.onclick=()=>{
+          const rev=blank.classList.toggle('revealed');
+          blank.textContent=rev?target:'？ 点击核对';
+          if(rev){ stopSongAudio(); speak(fullPlain); }
+        };
+        pLine.append(blank,document.createTextNode(fullPlain.slice(pos+target.length)));
+      }else{
+        pLine.innerHTML=rb(line.jp);
+      }
+      card.append(el('p',{class:'small muted',style:'margin:0'},'看下方中文意思与语法提示，先在脑中说出空格处的日语表达，再点击黄色空格核对：'),pLine);
+    }else{
+      const blindWrap=el('div',{class:'song-blind-wrap masked'});
+      blindWrap.append(el('p',{class:'ja song-line',style:'font-size:clamp(22px,3.6vw,32px);line-height:2.25;margin:0;overflow-wrap:anywhere'},rb(line.jp)));
+      const bRow=el('div',{class:'row'});
+      const reveal=el('button',{type:'button',class:'btn small'},'揭晓原文核对');
+      reveal.onclick=()=>{ const m=blindWrap.classList.toggle('masked'); reveal.textContent=m?'揭晓原文核对':'重新遮住原文'; };
+      bRow.append(el('span',{class:'small muted'},'先不看文字听 2 遍，跟读出声后再揭晓核对：'),reveal);
+      card.append(bRow,blindWrap);
+    }
+
+    // Audio controls row
+    const audioRow=el('div',{class:'row'});
+    const sayNormal=el('button',{type:'button',class:'btn pri small'},'▶ 朗读示范');
+    const saySlow=el('button',{type:'button',class:'btn small'},'🐢 0.7× 慢速跟读');
+    sayNormal.onclick=()=>{stopSongAudio();speak(plain(line.jp));};
+    saySlow.onclick=()=>{stopSongAudio();speak(plain(line.jp),{rate:0.7});};
+    audioRow.append(sayNormal,saySlow,el('span',{class:'small muted'},'使用设备日语语音核对词形与节奏'));
+    card.append(audioRow);
+
+    // Structured breakdown (directly visible; respects 中文 toggle cleanly!)
+    const grid=el('div',{class:'song-study-grid'});
+    const zhRow=el('div',{class:'song-study-row'});
+    const zhVal=el('div',{});
+    const zhText=el('div',{class:'zh hideable',style:'color:var(--ink);font-weight:500'},esc(line.zh));
+    const zhHint=el('div',{class:'zh-hidden-hint'});
+    const peekBtn=el('button',{type:'button',class:'btn small'},'临时看中文译文');
+    peekBtn.onclick=()=>{ zhText.classList.add('peek-open'); zhHint.classList.add('peek-open'); };
+    zhHint.append(el('span',{},'中文译文已隐藏（可在上方吸顶条勾选「中文」）'),peekBtn);
+    zhVal.append(zhText,zhHint);
+    zhRow.append(el('b',{},'中文译文'),zhVal);
+
+    const gramRow=el('div',{class:'song-study-row'},`<b>语法核心</b><div><div>${esc(line.grammar)}</div>${gramInfo?`<div class="song-n2-trap" style="margin-top:6px"><b>${esc(gramInfo.level)}</b>${esc(gramInfo.form?gramInfo.form+' · ':'')}${esc(gramInfo.trap)}</div>`:''}</div>`);
+    const chunkRow=el('div',{class:'song-study-row'},`<b>词块拆解</b><div>${esc(line.chunks)}</div>`);
+    grid.append(zhRow,gramRow,chunkRow);
+
+    // Active output practice prompt
+    if(line.practice){
+      const pBox=el('div',{class:'song-practice-box'});
+      pBox.append(el('div',{class:'small'},`<b style="color:var(--ai)">立刻输出小练习：</b>${esc(line.practice)}`));
+      const noteIn=el('input',{type:'text',placeholder:'在这里试着写出你的答案或造句（自动保存，帮助主动回忆）','aria-label':'练习输出笔记'});
+      noteIn.value=p.notes?.[idx]||'';
+      noteIn.oninput=()=>{ p.notes||={}; p.notes[idx]=noteIn.value; saveProgress(); };
+      pBox.append(noteIn);
+      grid.append(pBox);
+    }
+    card.append(grid);
+
+    // Learned toggle + quick next
+    const footRow=el('div',{class:'row',style:'justify-content:space-between'});
+    const learnedBtn=el('button',{type:'button',class:'btn'+(done?' pri':'')},done?'✓ 已掌握这句 · 点击取消':'我能读准并解释这句了 · 标记掌握');
+    learnedBtn.onclick=()=>{
+      if(p.learned.includes(idx)) p.learned=p.learned.filter(x=>x!==idx);
+      else p.learned.push(idx);
+      saveProgress(); refreshAll(); draw();
+    };
+    footRow.append(learnedBtn);
+    if(idx<course.lines.length-1){
+      const nextStep=el('button',{type:'button',class:'btn'},'下一句 →');
+      nextStep.onclick=()=>{idx++;draw();};
+      footRow.append(nextStep);
+    }else{
+      const toExam=el('button',{type:'button',class:'btn pri'},'全部学完 → 进入 N2 过关考 ↓');
+      toExam.onclick=()=>examBox.scrollIntoView({behavior:'smooth'});
+      footRow.append(toExam);
+    }
+    card.append(footRow);
+  }
+
+  if(!isSecondary){
+    songHotkeys=e=>{
+      if(e.key==='ArrowLeft'&&idx>0){ e.preventDefault(); idx--; draw(); }
+      else if(e.key==='ArrowRight'&&idx<course.lines.length-1){ e.preventDefault(); idx++; draw(); }
+      else if(e.key==='r'||e.key==='R'){ e.preventDefault(); stopSongAudio(); speak(plain(course.lines[idx].jp)); }
+      else if(e.key==='m'||e.key==='M'){
+        e.preventDefault();
+        if(p.learned.includes(idx)) p.learned=p.learned.filter(x=>x!==idx); else p.learned.push(idx);
+        saveProgress(); refreshAll(); draw();
+      }
+    };
+  }
+
+  // ===== Step 04: 3-in-1 JLPT N2 Exam Suite =====
+  examBox.append(el('div',{class:'h2row'},`<div><div class="eyebrow">Step 04 · JLPT N2 过关检测（理解文法 + 汉字读音 + 语序与听辨）</div><h3>不看翻译，验证是否真的学会</h3></div>`));
+  const examSeg=el('div',{class:'song-seg',role:'tablist','aria-label':'切换检测题型'});
+  const examStage=el('div',{style:'display:grid;gap:12px'});
+  const masterySlot=el('div',{});
+  const EXAM_TABS=[
+    {id:'quiz',label:`① 理解与文法（${course.quiz.length} 题）`},
+    {id:'kanji',label:`② N2 汉字读音速测（${kanjiPool.length} 题）`},
+    {id:'extra',label:'③ ★ 语序重组 & 盲听选义'}
+  ];
+
+  function renderMasteryBox(){
+    const m=songMastery(cur,p);
+    masterySlot.replaceChildren();
+    const mb=el('div',{class:'song-mastery-box'+(m.passed?' passed':'')});
+    const stageNames=['未过关','第 1 轮已过关（D+1 复测）','第 2 轮巩固（D+3 复测）','第 3 轮深化（D+7 复测）','🏆 长期掌握'];
+    const lvl=m.srs?.level||0;
+    mb.innerHTML=`<div class="row" style="justify-content:space-between"><b>${m.passed?'🏆 恭喜！本课已达到 JLPT N2 过关标准':'本课过关清单（达成 3 项自动进入抗遗忘复习）'}</b><span class="chip ${m.passed?'ok':''}">${esc(stageNames[Math.min(4,lvl)])}</span></div>
+    <div class="song-check-row">
+      <span>${m.linesOk?'✅':'⬜'} 精学句子 ${m.learned} / ${m.lineTarget} 句</span>
+      <span>${m.quizOk?'✅':'⬜'} 理解与文法 ${m.quizRight} / ${m.quizTarget} 题</span>
+      ${m.kanjiTotal?`<span>${m.kanjiOk?'✅':'⬜'} 汉字读音 ${m.kanjiRight} / ${m.kanjiTarget} 题</span>`:''}
+    </div>`;
+    if(m.srs){
+      const srsRow=el('div',{class:'row',style:'justify-content:space-between'});
+      const msg=m.mastered?'已完成 D+1 / D+3 / D+7 全部三轮抗遗忘复习，这一课的考点已经牢牢记住！':m.due?`今日到期复习（上次：${m.srs.last}）！重刷一遍汉字和错题后点击右侧打卡。`:`下次抗遗忘复习日期：${m.srs.next}（D+${SONG_SRS_OFFSETS[Math.min(2,m.srs.level-1)]}）`;
+      srsRow.append(el('span',{class:'small muted'},msg));
+      if(m.due&&!m.mastered){
+        const adv=el('button',{type:'button',class:'btn pri small'},'✓ 今日复习完成 · 推进下一轮');
+        adv.onclick=()=>{
+          const nextLvl=Math.min(4,(p.srs.level||1)+1);
+          p.srs={level:nextLvl,last:TODAY,next:nextLvl>=4?null:addDaysISO(TODAY,SONG_SRS_OFFSETS[nextLvl-1])};
+          saveProgress(); toast(nextLvl>=4?'太棒了！本课晋升为长期掌握！':`复习打卡成功，下次复习：${p.srs.next}`);
+          refreshAll();
+        };
+        srsRow.append(adv);
+      }
+      mb.append(srsRow);
+    }
+    masterySlot.append(mb);
+  }
+
+  let scrambleIdx=0, listenQuizIdx=0;
+  function renderExamStage(){
+    examStage.replaceChildren();
+    examSeg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.et===examTab)));
+    if(examTab==='quiz'){
+      const right=course.quiz.filter((_,i)=>p.qs[i]===true).length;
+      const answered=Object.keys(p.choices).length;
+      const bar=el('div',{class:'row',style:'justify-content:space-between'},`<span class="small">已答 ${answered} / ${course.quiz.length} · 答对 <b>${right}</b> 题（正确率 ${answered?Math.round(right/answered*100):0}%）</span>`);
+      const actions=el('div',{class:'row',style:'gap:6px'});
+      const wrongIdxs=course.quiz.map((_,i)=>i).filter(i=>p.qs[i]===false);
+      if(wrongIdxs.length){
+        const retryWrong=el('button',{type:'button',class:'btn small'},`只重做错题（${wrongIdxs.length}）`);
+        retryWrong.onclick=()=>{ wrongIdxs.forEach(i=>{delete p.choices[i];delete p.qs[i];}); saveProgress(); refreshAll(); renderExamStage(); };
+        actions.append(retryWrong);
+      }
+      if(answered){
+        const resetAll=el('button',{type:'button',class:'btn small'},'全部重测');
+        resetAll.onclick=()=>{ p.choices={}; p.qs={}; saveProgress(); refreshAll(); renderExamStage(); };
+        actions.append(resetAll);
+      }
+      bar.append(actions); examStage.append(bar);
+      course.quiz.forEach((q,i)=>{
+        const item=el('div',{class:'song-question'}), opts=el('div',{class:'opts'});
+        item.append(el('p',{},`<b>${i+1}. ${esc(q.q)}</b>`),opts);
+        const feedback=el('div');
+        q.options.forEach((text,j)=>{
+          const bt=el('button',{type:'button',class:'opt'},`<span class="n">${j+1}</span><span>${esc(text)}</span>`);
+          bt.onclick=()=>{
+            p.choices[i]=j; p.qs[i]=j===q.answer;
+            recordAnswer(`song:${progressId}:q${i}`);
+            if(!p.qs[i]) addWrong({...q,from:q.from||`歌曲 · ${plain(cur.title)}`});
+            saveProgress(); refreshAll(); renderExamStage();
+          };
+          if(i in p.choices){
+            bt.disabled=true;
+            if(j===q.answer) bt.classList.add('right');
+            else if(j===p.choices[i]) bt.classList.add('wrong');
+          }
+          opts.append(bt);
+        });
+        if(i in p.choices){
+          feedback.append(expBox(q,p.choices[i]));
+          const again=el('button',{type:'button',class:'btn small',style:'margin-top:8px'},'重做这题');
+          again.onclick=()=>{delete p.choices[i];delete p.qs[i];saveProgress();refreshAll();renderExamStage();};
+          feedback.append(again);
+        }
+        item.append(feedback); examStage.append(item);
+      });
+    }else if(examTab==='kanji'){
+      if(!kanjiPool.length){ examStage.append(el('div',{class:'empty'},'本课句子不含待测汉字。')); return; }
+      const right=kanjiPool.filter(k=>p.kanjiQs?.[k.key]===true).length;
+      const done=kanjiPool.filter(k=>k.key in (p.kanjiQs||{})).length;
+      const headBar=el('div',{class:'row',style:'justify-content:space-between'});
+      const kStat=el('span',{class:'small'},`对标 JLPT N2 問題1（漢字読み）· 已答 ${done}/${kanjiPool.length} · 答对 <b>${right}</b> 题`);
+      const syncKanjiHead=()=>{ const r=kanjiPool.filter(k=>p.kanjiQs?.[k.key]===true).length, d=kanjiPool.filter(k=>k.key in (p.kanjiQs||{})).length; kStat.innerHTML=`对标 JLPT N2 問題1（漢字読み）· 已答 ${d}/${kanjiPool.length} · 答对 <b>${r}</b> 题`; };
+      headBar.append(kStat);
+      const rst=el('button',{type:'button',class:'btn small',...(done?{}:{hidden:''})},'重测本课汉字读音');
+      rst.onclick=()=>{ p.kanjiQs={}; saveProgress(); refreshAll(); renderExamStage(); };
+      headBar.append(rst);
+      examStage.append(headBar);
+      kanjiPool.forEach((kq,ki)=>{
+        const item=el('div',{class:'song-question'});
+        const stem=el('div',{class:'qbig',style:'font-size:18px;line-height:1.9'},`${ki+1}. ${esc(kq.q).replace(/【(.+?)】/g,'<mark>$1</mark>')}`);
+        const opts=el('div',{class:'opts',style:'margin-top:8px'});
+        const fb=el('div');
+        const answered=kq.key in (p.kanjiQs||{});
+        kq.options.forEach((opt,j)=>{
+          const bt=el('button',{type:'button',class:'opt'},`<span class="n">${j+1}</span><span>${esc(opt)}</span>`);
+          bt.onclick=()=>{
+            const ok=j===kq.answer;
+            p.kanjiQs[kq.key]=ok;
+            recordAnswer(`song:${progressId}:k${ki}`);
+            if(!ok) addWrong(kq);
+            saveProgress(); refreshAll(); syncKanjiHead(); rst.hidden=false;
+            [...opts.children].forEach((b,bi)=>{ b.disabled=true; if(bi===kq.answer)b.classList.add('right'); else if(bi===j)b.classList.add('wrong'); });
+            const ex=expBox(kq,j);
+            const sayRow=el('div',{class:'row',style:'margin-top:6px'});
+            const bw=el('button',{type:'button',class:'btn small'},`▶ 读词「${kq.reading}」`); bw.onclick=()=>{stopSongAudio();speak(kq.reading);};
+            const bs=el('button',{type:'button',class:'btn small'},'▶ 读整句'); bs.onclick=()=>{stopSongAudio();speak(plain(kq.jp));};
+            sayRow.append(bw,bs); ex.append(sayRow);
+            fb.replaceChildren(ex);
+          };
+          if(answered){
+            bt.disabled=true;
+            if(j===kq.answer) bt.classList.add('right');
+          }
+          opts.append(bt);
+        });
+        if(answered){
+          const ok=p.kanjiQs[kq.key]===true;
+          const ex=expBox(kq,ok?kq.answer:null);
+          if(!ok) $('.verdict',ex).textContent=`上次答错 · 正确读音是 ${kq.answer+1}「${kq.reading}」`;
+          const sayRow=el('div',{class:'row',style:'margin-top:6px'});
+          const bw=el('button',{type:'button',class:'btn small'},`▶ 读词「${kq.reading}」`); bw.onclick=()=>{stopSongAudio();speak(kq.reading);};
+          const bs=el('button',{type:'button',class:'btn small'},'▶ 读整句'); bs.onclick=()=>{stopSongAudio();speak(plain(kq.jp));};
+          const ag=el('button',{type:'button',class:'btn small'},'重做'); ag.onclick=()=>{delete p.kanjiQs[kq.key];saveProgress();refreshAll();renderExamStage();};
+          sayRow.append(bw,bs,ag); ex.append(sayRow);
+          fb.append(ex);
+        }
+        item.append(stem,opts,fb);
+        examStage.append(item);
+      });
+    }else{
+      // Extra drills: (A) JLPT N2 Sentence Assembly Scramble + (B) Blind Listening Meaning Match
+      const drillLines=course.lines.slice(0,Math.min(course.lines.length,8));
+      const scLine=drillLines[scrambleIdx%drillLines.length];
+      const scBox=el('div',{class:'panel',style:'background:var(--paper);display:grid;gap:10px'});
+      scBox.append(el('div',{class:'row',style:'justify-content:space-between'},`<b>★ 语序重组（训练 N2 問題8 排列语感 · 第 ${(scrambleIdx%drillLines.length)+1}/${drillLines.length} 句）</b><span class="small muted">按中文提示拼出正确日语语序</span>`),el('p',{style:'margin:0'},`中文提示：<b>${esc(scLine.zh)}</b>`));
+      const chunks=splitSentenceChunks(scLine.jp);
+      const shuffled=seededShuffle(chunks.map((text,i)=>({text,i})),cur.id+'|sc|'+scrambleIdx);
+      const picked=[];
+      const slots=el('div',{class:'song-scramble-slots'}), pool=el('div',{class:'song-scramble-pool'}), scFb=el('div',{});
+      function drawScramble(){
+        slots.replaceChildren(); pool.replaceChildren(); scFb.replaceChildren();
+        if(!picked.length) slots.append(el('span',{class:'small muted'},'点击下方语块，按正确语序拼出句子……'));
+        picked.forEach((item,pi)=>{
+          const bt=el('button',{type:'button',class:'btn small pri'},esc(item.text));
+          bt.onclick=()=>{ picked.splice(pi,1); drawScramble(); };
+          slots.append(bt);
+        });
+        shuffled.forEach(item=>{
+          const used=picked.includes(item);
+          const bt=el('button',{type:'button',class:'btn small',...(used?{disabled:''}:{})},esc(item.text));
+          bt.onclick=()=>{ picked.push(item); drawScramble(); };
+          pool.append(bt);
+        });
+        if(picked.length===chunks.length){
+          const assembled=picked.map(x=>x.text).join('');
+          const target=chunks.join('');
+          const ok=assembled===target;
+          scFb.innerHTML=`<div class="explain"><div class="verdict ${ok?'ok':'ng'}">${ok?'✓ 语序完全正确！':'✗ 语序有偏差，再对比一下结构'}</div><p class="ja" style="margin:0;font-size:18px">${rb(scLine.jp)}</p><p class="small muted" style="margin:0">${esc(scLine.grammar)}</p></div>`;
+          if(ok){ stopSongAudio(); speak(plain(scLine.jp)); }
+        }
+      }
+      drawScramble();
+      const scCtrl=el('div',{class:'row'});
+      const scReset=el('button',{type:'button',class:'btn small'},'清空重拼'); scReset.onclick=()=>{picked.length=0;drawScramble();};
+      const scNext=el('button',{type:'button',class:'btn small pri'},'换下一句 →'); scNext.onclick=()=>{scrambleIdx=(scrambleIdx+1)%drillLines.length;renderExamStage();};
+      scCtrl.append(scReset,scNext);
+      scBox.append(slots,pool,scFb,scCtrl);
+      examStage.append(scBox);
+
+      // (B) Blind Listening Comprehension Match
+      if(drillLines.length>=4){
+        const lLine=drillLines[listenQuizIdx%drillLines.length];
+        const lBox=el('div',{class:'panel',style:'background:var(--paper);display:grid;gap:10px'});
+        lBox.append(el('div',{class:'row',style:'justify-content:space-between'},`<b>🎧 听句选义（训练 N2 听解瞬间反应 · 第 ${(listenQuizIdx%drillLines.length)+1}/${drillLines.length} 句）</b><span class="small muted">不看日文，听完直接选出正确中文意思</span>`));
+        const playRow=el('div',{class:'row'});
+        const bp=el('button',{type:'button',class:'btn pri small'},'▶ 播放句子（正常速）'); bp.onclick=()=>{stopSongAudio();speak(plain(lLine.jp));};
+        const bs=el('button',{type:'button',class:'btn small'},'🐢 0.7× 慢速听'); bs.onclick=()=>{stopSongAudio();speak(plain(lLine.jp),{rate:0.7});};
+        playRow.append(bp,bs);
+        const others=seededShuffle(drillLines.filter(x=>x!==lLine&&x.zh!==lLine.zh),cur.id+'|lq|'+listenQuizIdx).slice(0,3);
+        const lOpts=seededShuffle([lLine,...others],cur.id+'|lqo|'+listenQuizIdx);
+        const optDiv=el('div',{class:'opts'}), lFb=el('div',{});
+        lOpts.forEach((cand,ci)=>{
+          const bt=el('button',{type:'button',class:'opt'},`<span class="n">${ci+1}</span><span>${esc(cand.zh)}</span>`);
+          bt.onclick=()=>{
+            const ok=cand===lLine;
+            [...optDiv.children].forEach((b,bi)=>{ b.disabled=true; if(lOpts[bi]===lLine)b.classList.add('right'); else if(bi===ci)b.classList.add('wrong'); });
+            lFb.innerHTML=`<div class="explain"><div class="verdict ${ok?'ok':'ng'}">${ok?'✓ 听辨准确！':'✗ 听错了，对照原文再听一遍'}</div><p class="ja" style="margin:0;font-size:18px">${rb(lLine.jp)}</p><p class="small muted" style="margin:0">${esc(lLine.chunks)}</p></div>`;
+          };
+          optDiv.append(bt);
+        });
+        const lNext=el('button',{type:'button',class:'btn small',style:'justify-self:start'},'听下一句 →');
+        lNext.onclick=()=>{ listenQuizIdx=(listenQuizIdx+1)%drillLines.length; renderExamStage(); };
+        lBox.append(playRow,optDiv,lFb,lNext);
+        examStage.append(lBox);
+      }
+    }
+  }
+
+  EXAM_TABS.forEach(t=>{
+    const bt=el('button',{type:'button',role:'tab','data-et':t.id,'aria-selected':String(examTab===t.id)},t.label);
+    bt.onclick=()=>{examTab=t.id;renderExamStage();};
+    examSeg.append(bt);
+  });
+  examBox.append(examSeg,examStage,masterySlot);
+  draw();
+  renderExamStage();
+  refreshAll();
+
+  wrap.append(box,examBox);
+  wrap._jumpToLine=i=>{ idx=Math.max(0,Math.min(course.lines.length-1,i)); studyMode='study'; draw(); box.scrollIntoView({behavior:'smooth'}); };
+  return wrap;
 }
 /* Daily song selection: use the requested date, never silently substitute a future lesson. */
 function chooseDailySong(list,date){
   return list.find(x=>!x.supplemental&&x.date===date)||list.filter(x=>!x.supplemental&&x.date&&x.date<=date).sort((a,b)=>b.date.localeCompare(a.date))[0]||null;
 }
 function vSongs(v){
-  stopSongAudio();if(songURL){URL.revokeObjectURL(songURL);songURL=null;}songAudio=null;
-  head(v,'每日一首 · 日本の歌','一首歌，15～20 分钟 · 听辨 → 理解 → 运用 → 检测');
+  stopSongAudio(); songHotkeys=null; if(songURL){URL.revokeObjectURL(songURL);songURL=null;} songAudio=null;
+  head(v,'每日一首 · 日本の歌','JLPT N2 过关教学 · 考点先导 → 听辨原声 → 主动精学 → 真题闯关');
   const list=store.songs||[], date=currentId||TODAY, daily=chooseDailySong(list,date);
   if(!list.length){v.append(el('div',{class:'empty'},'歌曲课还在准备中。'));return;}
   const cur=list.find(x=>x.id===lsGet('n2songFor:'+date,''))||daily;
+
+  // Spaced repetition due-review banner across all songs
+  const dueSongs=list.filter(sg=>sg.lesson&&songMastery(sg,songProgress(sg.lesson.progressId||sg.id)).due);
+  if(dueSongs.length){
+    const srsBanner=el('div',{class:'song-srs-banner',role:'region','aria-label':'今日待复习歌曲课'});
+    srsBanner.append(el('div',{},`<b>🔔 今日待抗遗忘复习（${dueSongs.length} 首）</b><div class="small muted">按 D+1 / D+3 / D+7 节奏复习，才能把听懂的语法和汉字稳稳带进 N2 考场。</div>`));
+    const dueRow=el('div',{class:'row'});
+    dueSongs.slice(0,6).forEach(sg=>{
+      const b=el('button',{type:'button',class:'btn small'+(cur?.id===sg.id?' pri':'')},`↻ ${plain(sg.title)}（${sg.date.slice(5)}）`);
+      b.onclick=()=>{ stopAll(); lsSet('n2songFor:'+date,sg.id===daily?.id?'':sg.id); rerender(); };
+      dueRow.append(b);
+    });
+    srsBanner.append(dueRow);
+    v.append(srsBanner);
+  }
+
+  // Song Selector + Expandable Visual Song Library
   const pick=el('div',{class:'panel',style:'display:grid;gap:10px'});
-  pick.append(el('a',{href:cur?'songs/'+encodeURIComponent(cur.id)+'.html':'songs/'},'课程文本版 · 可分享给 Gemini'));
-  pick.append(el('div',{class:'eyebrow'},`${esc(date)} · ${date===TODAY?'今日歌曲课':'所选日期的歌曲课'}`));
+  const topMeta=el('div',{class:'row',style:'justify-content:space-between'});
+  const curBadge=cur?(cur.date===date?'当前教材配套歌曲课':cur.date>date?'预习歌曲课':'回看往期歌曲课'):'所选日期歌曲课';
+  topMeta.innerHTML=`<div class="eyebrow">${esc(cur?.date||date)} · ${esc(curBadge)}</div><a class="link" href="${cur?'songs/'+encodeURIComponent(cur.id)+'.html':'songs/'}">课程文本版 ↗</a>`;
+  pick.append(topMeta);
+
   const select=el('select',{'aria-label':'每日歌曲与往期课程',style:'max-width:100%;width:100%;padding:10px;font:inherit;border-radius:8px'});
-  select.append(el('option',{value:''},daily?.date===date?`当天推荐 · ${plain(daily.title)}`:'当天歌曲尚未发布'));
-  list.filter(x=>x.date&&x.lesson&&x.id!==daily?.id).sort((a,b)=>b.date.localeCompare(a.date)).forEach(sg=>select.append(el('option',{value:sg.id},esc(`${sg.date}${sg.supplemental?' · 补充歌词课':sg.date>TODAY?' · 预习':''} · ${plain(sg.title)} · ${sg.artist}`))));
-  select.value=cur?.id===daily?.id?'':lsGet('n2songFor:'+date,'');select.onchange=()=>{stopAll();lsSet('n2songFor:'+date,select.value);rerender();};pick.append(select);
+  const badgeOf=sg=>{ const m=songMastery(sg,songProgress(sg.lesson?.progressId||sg.id)); return m.due?'↻ ':m.passed?'✓ ':m.learned>0||m.quizRight>0||m.kanjiRight>0||m.tasksDone>0?'◐ ':''; };
+  select.append(el('option',{value:''},daily?.date===date?`${badgeOf(daily)}当天推荐 · ${plain(daily.title)} · ${daily.artist}`:'当天歌曲尚未发布'));
+  list.filter(x=>x.date&&x.lesson&&x.id!==daily?.id).sort((a,b)=>b.date.localeCompare(a.date)).forEach(sg=>{
+    select.append(el('option',{value:sg.id},esc(`${badgeOf(sg)}${sg.date}${sg.supplemental?' · 补充歌词课':sg.date>TODAY?' · 预习':''} · ${plain(sg.title)} · ${sg.artist}`)));
+  });
+  select.value=cur?.id===daily?.id?'':lsGet('n2songFor:'+date,'');
+  select.onchange=()=>{stopAll();lsSet('n2songFor:'+date,select.value);rerender();};
+  pick.append(select);
+
+  const allPassed=list.filter(s=>s.lesson&&songMastery(s,songProgress(s.lesson.progressId||s.id)).passed).length;
   const days=packIds(), covered=days.filter(d=>list.some(s=>!s.supplemental&&s.date===d&&s.lesson?.lines?.length&&s.lesson?.quiz?.length));
-  pick.append(el('p',{class:'small',role:'status'},`教材 ${days.length} 天 · 已配 ${covered.length} 首${covered.length===days.length?' · 每天一首，已全部配齐':` · 还缺 ${days.length-covered.length} 天`}${list.some(s=>s.supplemental)?` · 另有 ${list.filter(s=>s.supplemental).length} 首补充课`:''}`));
-  pick.append(el('p',{class:'small muted'},'每天一首不同的歌。默认跟随顶部教材日期，也可以在这里回看往期或预习已准备的课程。'));
+  const summaryRow=el('div',{class:'row',style:'justify-content:space-between'},`<span class="small muted">已过关 <b>${allPassed} / ${list.length}</b> 首 · 教材覆盖 ${covered.length}/${days.length} 天</span>`);
+  const libToggle=el('button',{type:'button',class:'btn small'},`展开全部歌单（${list.length} 首）`);
+  const libWrap=el('div',{hidden:''});
+  let libFilter='all';
+  function renderLibrary(){
+    libWrap.replaceChildren();
+    const fRow=el('div',{class:'row',style:'margin-top:6px'});
+    const filters=[['all','全部'],['due',`待复习 (${dueSongs.length})`],['doing','学习中'],['todo','未开始'],['passed',`已过关 (${allPassed})`]];
+    filters.forEach(([fid,label])=>{
+      const fb=el('button',{type:'button',class:'btn small'+(libFilter===fid?' pri':'')},label);
+      fb.onclick=()=>{libFilter=fid;renderLibrary();};
+      fRow.append(fb);
+    });
+    const grid=el('div',{class:'song-lib-grid'});
+    const sorted=[...list].filter(x=>x.lesson).sort((a,b)=>b.date.localeCompare(a.date));
+    const filtered=sorted.filter(sg=>{
+      const m=songMastery(sg,songProgress(sg.lesson.progressId||sg.id));
+      if(libFilter==='due')return m.due;
+      if(libFilter==='passed')return m.passed;
+      if(libFilter==='doing')return !m.passed&&(m.learned>0||m.quizRight>0||m.kanjiRight>0||m.tasksDone>0);
+      if(libFilter==='todo')return !m.passed&&m.learned===0&&m.quizRight===0&&m.kanjiRight===0&&m.tasksDone===0;
+      return true;
+    });
+    if(!filtered.length){ grid.append(el('div',{class:'small muted'},'这个分类下暂时没有歌曲。')); }
+    filtered.forEach(sg=>{
+      const m=songMastery(sg,songProgress(sg.lesson.progressId||sg.id));
+      const card=el('button',{type:'button',class:'song-lib-card'+(cur?.id===sg.id?' current':'')+(m.passed?' passed':'')});
+      const stLabel=m.due?'↻ 待复习':m.mastered?'🏆 已掌握':m.passed?'✓ 已过关':(m.learned>0||m.quizRight>0)?`进行中 ${m.learned}/${m.totalLines}句`:'未开始';
+      card.innerHTML=`<div class="row" style="justify-content:space-between"><span class="small muted">${esc(sg.date)}</span><span class="chip ${m.passed?'ok':''}">${esc(stLabel)}</span></div><div class="t">${esc(plain(sg.title))}</div><div class="small muted">${esc(sg.artist)} · 测验 ${m.quizRight}/${m.totalQuiz}</div>`;
+      card.onclick=()=>{ stopAll(); lsSet('n2songFor:'+date,sg.id===daily?.id?'':sg.id); rerender(); };
+      grid.append(card);
+    });
+    libWrap.append(fRow,grid);
+  }
+  libToggle.onclick=()=>{
+    libWrap.hidden=!libWrap.hidden;
+    libToggle.textContent=libWrap.hidden?`展开全部歌单（${list.length} 首）`:'收起歌单';
+    if(!libWrap.hidden) renderLibrary();
+  };
+  summaryRow.append(libToggle);
+  pick.append(summaryRow,libWrap);
   v.append(pick);
+
   if(!cur){v.append(el('div',{class:'empty'},'这一天还没有歌曲课，请在上面选择已发布的课程。'));return;}
-  if(cur.date!==date)v.append(el('p',{class:'tip'},`正在${cur.date>date?'预习':'回看'} ${esc(cur.date)} 的歌曲课${daily?.date!==date?'；所选日期的新课尚未发布':''}。`));
-  v.append(el('div',{class:'panel'},`<div class="eyebrow">${esc(cur.date||'歌曲课')} · ${cur.supplemental?'补充歌词课':cur.date===date?'当日歌曲':'歌曲档案'}</div><h3 style="font-size:24px">${rb(cur.title)}</h3><p class="small muted">${esc(cur.artist)} · ${esc(cur.year)} · ${esc(cur.level)}</p><p>${esc(cur.about)}</p><b>今天学会这几件事</b><ul class="notes">${(cur.goals||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="tip">先用 5 分钟听，再用 10 分钟理解和练习，最后做检测。歌曲课包含在每天 2 小时的 N2 计划内；答错的知识点进入错题本继续复习。</p>`));
-  v.append(songPlayer(cur),voiceControls({speech:true}));
-  if(cur.listeningTasks?.length)v.append(el('div',{class:'panel'},`<h3>带着任务听三遍</h3><ol class="notes">${cur.listeningTasks.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`));
-  if(cur.lesson)v.append(songLesson(cur));
-  if(cur.transferLesson){const old=el('details',{class:'panel'});old.append(el('summary',{},'附加：原有迁移练习与学习记录'));let loaded=false;old.ontoggle=()=>{if(old.open&&!loaded){old.append(songLesson({...cur,lesson:cur.transferLesson}));loaded=true;}};v.append(old);}
-  const extra=el('details',{class:'panel'});extra.append(el('summary',{},'段落词汇与语法拓展'));
-  const g=el('div',{class:'songsecs'});cur.sections.forEach(sec=>g.append(el('div',{class:'songsec'},`<div class="ss-l"><div class="eyebrow">${rb(sec.h)}</div><p>${esc(sec.sum)}</p></div><div class="ss-r">${sec.words.map(w=>`<div class="sw"><b class="ja">${rb(w.w)}</b><span>${rb(w.zh)}</span></div>`).join('')}</div>`)));extra.append(g);
-  if(cur.grammar?.length)extra.append(el('div',{class:'explain'},`<b>语法拓展</b><ul class="notes">${cur.grammar.map(x=>`<li>${rb(x)}</li>`).join('')}</ul>`));v.append(extra);
-  v.append(el('p',{class:'small muted'},'歌词课依据你提供的段落编写；标注为原创的练习句不是歌词。歌曲使用官方播放器，不在本站存放原唱录音。学习标记与测验结果会进入学习记录备份，本地音频不会。'));
+  if(cur.date!==date)v.append(el('p',{class:'tip',style:'margin:0'},`正在${cur.date>date?'预习':'回看'} <b>${esc(cur.date)}</b> 的歌曲课（${esc(plain(cur.title))}）${daily?.date!==date?'；所选日期的新课尚未发布':''}。`));
+
+  // 4-step interactive roadmap bar for this song
+  const progressId=cur.lesson?.progressId||cur.id, p=songProgress(progressId);
+  const flowBar=el('div',{class:'song-flow','aria-label':'本课四步学习进度'});
+  function renderFlow(){
+    const m=songMastery(cur,p);
+    flowBar.replaceChildren();
+    const steps=[
+      {id:'song-step-primer',num:'01',title:'N2 考点先导',sub:`${(cur.grammar||[]).length} 个语法重点`,done:m.learned>0||m.tasksDone>0},
+      {id:'song-step-listen',num:'02',title:'听辨原声',sub:`任务 ${m.tasksDone}/${m.tasksTotal||3}`,done:m.tasksTotal>0&&m.tasksDone>=m.tasksTotal},
+      {id:'song-step-study',num:'03',title:'主动精学',sub:`${m.learned}/${m.totalLines} 句`,done:m.linesOk},
+      {id:'song-step-exam',num:'04',title:'N2 过关检测',sub:`文法 ${m.quizRight}/${m.totalQuiz} · 汉字 ${m.kanjiRight}/${m.kanjiTotal}`,done:m.quizOk&&m.kanjiOk}
+    ];
+    steps.forEach(s=>{
+      const b=el('button',{type:'button',class:'song-flow-btn'+(s.done?' done':'')},`<small>${s.done?'✓ 已完成':'Step '+s.num}</small><b>${s.title}</b><small>${esc(s.sub)}</small>`);
+      b.onclick=()=>document.getElementById(s.id)?.scrollIntoView({behavior:'smooth'});
+      flowBar.append(b);
+    });
+  }
+  renderFlow();
+  v.append(flowBar);
+
+  // Build lesson first so Step 01 grammar cards can jump directly to lines in Step 03
+  const lessonNode=cur.lesson?songLesson(cur,renderFlow,false):null;
+  // Step 01: N2 Primer
+  v.append(songN2Primer(cur,i=>lessonNode?._jumpToLine?.(i)));
+  // Step 02: Segmented Audio Player + Listening Checklist
+  v.append(songPlayer(cur,progressId,p,renderFlow));
+  // Sticky Learning Toolbar (语速 / 读音 / 中文 — now stays visible throughout Step 03 & Step 04!)
+  const stickyBar=el('div',{class:'song-sticky-bar','aria-label':'歌曲学习工具条'});
+  stickyBar.append(el('span',{class:'small',style:'font-weight:700;color:var(--ai)'},'学习控制'),voiceControls({speech:true}));
+  v.append(stickyBar);
+  // Step 03 + Step 04
+  if(lessonNode) v.append(lessonNode);
+  // Optional secondary transferLesson (preserved cleanly for lemon / pretender / sora-mo-toberu-hazu)
+  if(cur.transferLesson){
+    const old=el('details',{class:'panel'});
+    old.append(el('summary',{},'附加：原有迁移练习与历史学习记录'));
+    let loaded=false;
+    old.ontoggle=()=>{if(old.open&&!loaded){old.append(songLesson({...cur,lesson:cur.transferLesson},null,true));loaded=true;}};
+    v.append(old);
+  }
+  v.append(el('p',{class:'small muted'},'歌词课依据你提供的段落编写；标注为原创的练习句不是歌词。歌曲使用官方播放器，不在本站存放原唱录音。学习进度、汉字读音测验与抗遗忘复习记录均纳入「备份记录」。'));
 }
 
 /* --- 錯題本 --- */
