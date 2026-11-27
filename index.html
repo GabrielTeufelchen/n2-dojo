@@ -1521,10 +1521,9 @@ function ensureSongSRS(cur,p){
 }
 function songPlayer(cur,progressId,p,onTaskChange){
   const box=el('section',{class:'panel song-player',id:'song-step-listen','aria-label':'歌曲播放与听力任务'});
-  box.append(el('div',{class:'h2row'},`<div><div class="eyebrow">Step 02 · 听辨原声（YouTube Music / Google 订阅）</div><h3>先听原声，再带着任务打卡</h3></div><span class="small muted">${esc(cur.media?.label||'官方音源')}</span>`));
+  box.append(el('div',{class:'h2row'},`<div><div class="eyebrow">Step 02 · 听辨原声</div><h3>先听原声，再带着任务打卡</h3></div><span class="small muted">${esc(cur.media?.label||'官方音源')}</span>`));
   const modes=[];
-  if(cur.media?.youtube) modes.push({id:'ytmusic',label:'YouTube Music 整首'});
-  if(cur.media?.preview?.url) modes.push({id:'preview',label:'30 秒免登录试听'});
+  if(cur.media?.youtube) modes.push({id:'ytmusic',label:'YouTube 页内播放'});
   modes.push({id:'local',label:'本地 A–B 复读'});
   let activeMode=modes[0].id;
   const seg=el('div',{class:'song-seg',role:'tablist','aria-label':'选择音源'});
@@ -1537,16 +1536,10 @@ function songPlayer(cur,progressId,p,onTaskChange){
     seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.mode===activeMode)));
     if(activeMode==='ytmusic'&&cur.media?.youtube){
       const m=cur.media;
-      const frame=el('iframe',{src:`https://www.youtube.com/embed/${encodeURIComponent(m.youtube)}?playsinline=1&rel=0`,title:`YouTube Music · ${m.label||plain(cur.title)}`,allow:'autoplay; encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'display:block;width:100%;aspect-ratio:16/9;max-height:360px;border:0;border-radius:10px'});
+      const frame=el('iframe',{src:`https://www.youtube.com/embed/${encodeURIComponent(m.youtube)}?playsinline=1&rel=0`,title:`YouTube · ${m.label||plain(cur.title)}`,allow:'autoplay; encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'display:block;width:100%;aspect-ratio:16/9;max-height:360px;border:0;border-radius:10px'});
       const actions=el('div',{class:'row',style:'justify-content:space-between'});
-      actions.innerHTML=`<div class="row" style="gap:8px"><a href="${esc(ytMusicUrl(m))}" target="_blank" rel="noopener" class="btn pri small" style="text-decoration:none">🎵 在 YouTube Music 听整首 ↗</a><a href="${esc(ytMusicSearchUrl())}" target="_blank" rel="noopener" class="btn small" style="text-decoration:none">在 YouTube Music 搜录音室版 ↗</a></div><span class="small muted">${esc(m.label||'官方音源')}</span>`;
-      stage.append(frame,actions,el('p',{class:'small muted',style:'margin:0'},'已登录 Google / YouTube Music（YouTube Premium）订阅账号可在页内直接免广告播放完整版；若某首歌页内视频为短版或现场版，点「搜录音室版」即可在 YouTube Music 直接播完整音频。'));
-    }else if(activeMode==='preview'&&cur.media?.preview?.url){
-      const m=cur.media;
-      const sample=el('audio',{controls:'',preload:'metadata',src:m.preview.url,style:'width:100%','aria-label':'免登录试听'});
-      sample.onplay=()=>{if(songAudio!==sample)stopSongAudio();songAudio=sample;if(tts.ok)speechSynthesis.cancel();};
-      sample.onerror=()=>{sample.after(el('p',{role:'status',class:'small muted'},'试听片段暂时未能加载，请直接切换「YouTube Music 整首」或「本地 A–B 复读」。'));};
-      stage.append(sample,el('div',{class:'row',style:'justify-content:space-between'},`<span class="small muted">免登录 30 秒片段 · 临时快速预览用</span>${m.youtube?`<a href="${esc(ytMusicUrl(m))}" target="_blank" rel="noopener" class="link">去 YouTube Music 听完整版 ↗</a>`:''}`));
+      actions.innerHTML=`<div class="row" style="gap:8px"><a href="${esc(ytMusicUrl(m))}" target="_blank" rel="noopener" class="btn pri small" style="text-decoration:none">在 YouTube Music 打开 ↗</a><a href="${esc(ytMusicSearchUrl())}" target="_blank" rel="noopener" class="btn small" style="text-decoration:none">在 YouTube Music 搜录音室版 ↗</a></div><span class="small muted">${esc(m.label||'官方音源')}</span>`;
+      stage.append(frame,actions,el('p',{class:'small muted',style:'margin:0'},'点播放器中的播放键即可听当前版本。若提示限制播放，可在 YouTube Music 打开。'));
     }else{
       const wrap=el('div',{style:'display:grid;gap:10px'});
       wrap.append(el('p',{class:'small muted'},'导入本地原唱文件（MP3/M4A/WAV）进行慢速与 A–B 复读。文件只在浏览器本地播放，不上传。'));
