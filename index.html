@@ -750,7 +750,8 @@ function rerender(){
   if(!pack()){ v.append(el("div",{class:"empty"},store.loaded?"没有找到教材文件。":"教材加载中……")); m.append(v); return; }
   m.append(el("section",{id:"studyPlan",class:"panel study-plan","aria-label":"学习进度与路线"})); renderStudyPlan();
   ({path:vGrammarPath,listen:vListen,read:vRead,vocab:vVocab,speak:vSpeak,arena:vArena,culture:vCulture,adult:vAdult,songs:vSongs,wrong:vWrong})[tab](v);
-  m.append(v);
+  if(tab==="songs") m.prepend(v);
+  else m.append(v);
 }
 function renderPackbar(){
   const b=$("#packbar"); b.innerHTML=""; const ids=packIds(); if(!ids.length) return;
@@ -1521,7 +1522,7 @@ function ensureSongSRS(cur,p){
 }
 function songPlayer(cur,progressId,p,onTaskChange){
   const box=el('section',{class:'panel song-player',id:'song-step-listen','aria-label':'歌曲播放与听力任务'});
-  box.append(el('div',{class:'h2row'},`<div><div class="eyebrow">Step 02 · 听辨原声</div><h3>先听原声，再带着任务打卡</h3></div><span class="small muted">${esc(cur.media?.label||'官方音源')}</span>`));
+  box.append(el('div',{class:'h2row'},`<div><div class="eyebrow">Step 01 · 听辨原声</div><h3>播放《${esc(plain(cur.title))}》</h3></div><span class="small muted">${esc(cur.media?.label||'官方音源')}</span>`));
   const modes=[];
   if(cur.media?.youtube) modes.push({id:'ytmusic',label:'YouTube 页内播放'});
   modes.push({id:'local',label:'本地 A–B 复读'});
@@ -1534,7 +1535,7 @@ function songPlayer(cur,progressId,p,onTaskChange){
     seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.mode===activeMode)));
     if(activeMode==='ytmusic'&&cur.media?.youtube){
       const m=cur.media;
-      const frame=el('iframe',{src:`https://www.youtube.com/embed/${encodeURIComponent(m.youtube)}?playsinline=1&rel=0`,title:`YouTube · ${m.label||plain(cur.title)}`,allow:'autoplay; encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'display:block;width:100%;aspect-ratio:16/9;max-height:360px;border:0;border-radius:10px'});
+      const frame=el('iframe',{src:`https://www.youtube.com/embed/${encodeURIComponent(m.youtube)}?playsinline=1&rel=0`,title:`YouTube · ${m.label||plain(cur.title)}`,allow:'autoplay; encrypted-media; fullscreen; picture-in-picture',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin',style:'display:block;width:100%;aspect-ratio:16/9;min-height:200px;max-height:360px;border:0;border-radius:10px'});
       const help=el('details',{class:'small'});
       help.append(el('summary',{},'已登录，播放器仍要求登录？'));
       const signIn=el('a',{href:'https://www.youtube.com/',target:'_blank',rel:'noopener'},'在 YouTube 确认账号');
@@ -1609,7 +1610,7 @@ function songPlayer(cur,progressId,p,onTaskChange){
 }
 function songN2Primer(cur,onJumpLine){
   const box=el('section',{class:'panel',id:'song-step-primer',style:'display:grid;gap:14px','aria-label':'今日 N2 考点先导'});
-  box.append(el('div',{class:'h2row'},`<div><div class="eyebrow">Step 01 · 先懂考点再听歌（目标：JLPT N2 提分）</div><h3 style="font-size:24px">${rb(cur.title)}</h3><div class="small muted">${esc(cur.artist)} · ${esc(cur.year)} · ${esc(cur.level)}</div></div><span class="chip">${cur.lesson?.kind==='transfer'?'N3→N2 迁移课':'歌词精读课'}</span>`));
+  box.append(el('div',{class:'h2row'},`<div><div class="eyebrow">Step 02 · N2 考点</div><h3 style="font-size:24px">${rb(cur.title)}</h3><div class="small muted">${esc(cur.artist)} · ${esc(cur.year)} · ${esc(cur.level)}</div></div><span class="chip">${cur.lesson?.kind==='transfer'?'N3→N2 迁移课':'歌词精读课'}</span>`));
   box.append(el('p',{style:'margin:0'},esc(cur.about)));
   if(cur.goals?.length){
     box.append(el('div',{},`<b>本课 3 个过关目标</b><ul class="notes" style="margin-top:6px">${cur.goals.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`));
@@ -2136,7 +2137,7 @@ function chooseDailySong(list,date){
 }
 function vSongs(v){
   stopSongAudio(); songHotkeys=null; if(songURL){URL.revokeObjectURL(songURL);songURL=null;} songAudio=null;
-  head(v,'每日一首 · 日本の歌','JLPT N2 过关教学 · 考点先导 → 听辨原声 → 主动精学 → 真题闯关');
+  head(v,'每日一首 · 日本の歌','JLPT N2 过关教学 · 听辨原声 → 考点先导 → 主动精学 → 真题闯关');
   const list=store.songs||[], date=currentId||TODAY, daily=chooseDailySong(list,date);
   if(!list.length){v.append(el('div',{class:'empty'},'歌曲课还在准备中。'));return;}
   const cur=list.find(x=>x.id===lsGet('n2songFor:'+date,''))||daily;
@@ -2228,8 +2229,8 @@ function vSongs(v){
     const m=songMastery(cur,p);
     flowBar.replaceChildren();
     const steps=[
-      {id:'song-step-primer',num:'01',title:'N2 考点先导',sub:`${(cur.grammar||[]).length} 个语法重点`,done:m.learned>0||m.tasksDone>0},
-      {id:'song-step-listen',num:'02',title:'听辨原声',sub:`任务 ${m.tasksDone}/${m.tasksTotal||3}`,done:m.tasksTotal>0&&m.tasksDone>=m.tasksTotal},
+      {id:'song-step-listen',num:'01',title:'听辨原声',sub:`任务 ${m.tasksDone}/${m.tasksTotal||3}`,done:m.tasksTotal>0&&m.tasksDone>=m.tasksTotal},
+      {id:'song-step-primer',num:'02',title:'N2 考点先导',sub:`${(cur.grammar||[]).length} 个语法重点`,done:m.learned>0||m.tasksDone>0},
       {id:'song-step-study',num:'03',title:'主动精学',sub:`${m.learned}/${m.totalLines} 句`,done:m.linesOk},
       {id:'song-step-exam',num:'04',title:'N2 过关检测',sub:`文法 ${m.quizRight}/${m.totalQuiz} · 汉字 ${m.kanjiRight}/${m.kanjiTotal}`,done:m.quizOk&&m.kanjiOk}
     ];
@@ -2240,14 +2241,11 @@ function vSongs(v){
     });
   }
   renderFlow();
-  v.append(flowBar);
+  v.append(songPlayer(cur,progressId,p,renderFlow),flowBar);
 
-  // Build lesson first so Step 01 grammar cards can jump directly to lines in Step 03
+  // Grammar cards link to individual lines in the lesson.
   const lessonNode=cur.lesson?songLesson(cur,renderFlow,false):null;
-  // Step 01: N2 Primer
   v.append(songN2Primer(cur,i=>lessonNode?._jumpToLine?.(i)));
-  // Step 02: Segmented Audio Player + Listening Checklist
-  v.append(songPlayer(cur,progressId,p,renderFlow));
   // Sticky Learning Toolbar (语速 / 读音 / 中文 — now stays visible throughout Step 03 & Step 04!)
   const stickyBar=el('div',{class:'song-sticky-bar','aria-label':'歌曲学习工具条'});
   stickyBar.append(el('span',{class:'small',style:'font-weight:700;color:var(--ai)'},'学习控制'),voiceControls({speech:true}));
