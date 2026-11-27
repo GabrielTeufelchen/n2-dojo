@@ -12,10 +12,16 @@ function text(value) {
 function list(items, tag = 'ul') {
   return items?.length ? '<' + tag + '>' + items.map(x => '<li>' + text(x) + '</li>').join('') + '</' + tag + '>' : '';
 }
+function player(s) {
+  if (!s.media.youtube) return '';
+  const url = 'https://www.youtube.com/embed/' + encodeURIComponent(s.media.youtube) + '?playsinline=1';
+  return '<iframe title="' + text(s.title + ' · ' + s.media.label) + '" src="' + url
+    + '" loading="lazy" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen'
+    + ' referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;aspect-ratio:16/9;min-height:200px;border:0"></iframe>';
+}
 function lesson(s) {
-  return '<h2>' + text(s.title) + '</h2><p>' + text(s.artist) + ' · ' + text(s.date) + '</p><p>' + text(s.about) + '</p><h3>学习目标</h3>' + list(s.goals)
+  return '<h2>' + text(s.title) + '</h2><p>' + text(s.artist) + ' · ' + text(s.date) + '</p>' + player(s) + '<p>' + text(s.media.label) + '</p><p>' + text(s.about) + '</p><h3>学习目标</h3>' + list(s.goals)
     + (s.listeningTasks?.length ? '<h3>听辨</h3>' + list(s.listeningTasks) : '')
-    + '<p>' + text(s.media.label) + (s.media.youtube ? ' · <a href="' + text(s.media.ytMusic || ('https://music.youtube.com/watch?v=' + s.media.youtube)) + '" target="_blank" rel="noopener">YouTube Music 听整首</a>' : '') + '</p>'
     + s.sections.map(part => '<h3>' + text(part.h) + '</h3><p>' + text(part.sum) + '</p>' + list(part.words?.map(w => w.w + '　' + w.zh))).join('')
     + '<h3>语法</h3>' + list(s.grammar) + '<h3>逐句学习</h3><p>' + text(s.lesson.source) + '</p>'
     + s.lesson.lines.map(l => '<section><h4 lang="ja">' + text(l.jp) + '</h4>' + [l.zh,l.chunks,l.grammar,l.practice].filter(Boolean).map(x => '<p>' + text(x) + '</p>').join('') + '</section>').join('')
